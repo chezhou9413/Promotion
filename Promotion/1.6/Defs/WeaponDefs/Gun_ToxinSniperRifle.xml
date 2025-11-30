@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- 毒素狙击步枪 - 基于原版狙击步枪 -->
+  <ThingDef ParentName="BaseHumanMakeableGun">
+    <defName>Gun_ToxinSniperRifle</defName>
+    <label>毒素狙击步枪</label>
+    <description>一种古老设计的精密毒素狙击步枪。栓动式结构。它具有超长的射程、极佳的精度和强大的威力。发射带有高浓度毒素的子弹，能够对目标造成致命的毒素伤害。由于过于笨重，在近距离作战中会被其他武器超越。</description>
+    
+    <!-- 武器贴图设置 -->
+    <graphicData>
+      <texPath>weapon/Gun_ToxinSniperRifle</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>1.4</drawSize>  <!-- 狙击枪贴图放大到1.4倍 -->
+    </graphicData>
+    
+    <!-- 武器UI图标缩放 -->
+    <uiIconScale>1.3</uiIconScale>  <!-- UI界面图标放大到1.3倍 -->
+    
+    <!-- 武器交互音效 -->
+    <soundInteract>Interact_Rifle</soundInteract>
+    
+    <!-- 武器分类 - 影响AI使用策略 -->
+    <weaponClasses>
+      <li>LongShots</li>    <!-- 远距离射击 -->
+      <li>RangedHeavy</li>  <!-- 重型远程武器 -->
+    </weaponClasses>
+    
+    <!-- 制作配方设置 -->
+    <recipeMaker>
+      <researchPrerequisite>PrecisionRifling</researchPrerequisite> <!-- 前置研究：精密膛线 -->
+      <skillRequirements>
+        <Crafting>8</Crafting> <!-- 制作技能要求：8级（比原版高1级） -->
+      </skillRequirements>
+      <displayPriority>426</displayPriority> <!-- 显示优先级，略高于原版狙击步枪 -->
+    </recipeMaker>
+    
+    <!-- 奖励标签 -->
+    <thingSetMakerTags><li>RewardStandardQualitySuper</li></thingSetMakerTags>
+    
+    <!-- 收藏品数量 -->
+    <possessionCount>1</possessionCount>
+    
+    <!-- 武器基础属性 - 基于原版狙击步枪数据 -->
+    <statBases>
+      <WorkToMake>48000</WorkToMake>           <!-- 制作工作量，比原版高 -->
+      <Mass>4.2</Mass>                         <!-- 重量（kg），略重于原版 -->
+      <AccuracyTouch>0.50</AccuracyTouch>      <!-- 近距离精度 -->
+      <AccuracyShort>0.70</AccuracyShort>      <!-- 短距离精度 -->
+      <AccuracyMedium>0.88</AccuracyMedium>    <!-- 中距离精度 -->
+      <AccuracyLong>0.90</AccuracyLong>        <!-- 远距离精度 -->
+      <RangedWeapon_Cooldown>1.5</RangedWeapon_Cooldown> <!-- 武器冷却时间 -->
+    </statBases>
+    
+    <!-- 制作材料成本 -->
+    <costList>
+      <Steel>70</Steel>                        <!-- 钢铁：70个 -->
+      <ComponentIndustrial>10</ComponentIndustrial> <!-- 工业零件：10个 -->
+      <Chemfuel>25</Chemfuel>                  <!-- 化合燃料：25个（用于高浓度毒素系统） -->
+    </costList>
+    
+    <!-- 武器动作设置 -->
+    <verbs>
+      <li>
+        <verbClass>Verb_Shoot</verbClass>      <!-- 射击动作类 -->
+        <hasStandardCommand>true</hasStandardCommand> <!-- 有标准命令 -->
+        <defaultProjectile>Bullet_ToxinSniperRifle</defaultProjectile> <!-- 默认子弹 -->
+        <warmupTime>3.5</warmupTime>           <!-- 瞄准时间，与原版相同 -->
+        <range>44.9</range>                    <!-- 射程，与原版相同 -->
+        <burstShotCount>1</burstShotCount>     <!-- 单发射击 -->
+        <soundCast>Shot_SniperRifle</soundCast>   <!-- 射击音效 -->
+        <soundCastTail>GunTail_Heavy</soundCastTail> <!-- 射击尾音 -->
+        <muzzleFlashScale>9</muzzleFlashScale> <!-- 枪口火焰大小 -->
+      </li>
+    </verbs>
+    
+    <!-- 武器标签 - 用于AI和贸易系统 -->
+    <weaponTags Inherit="False">
+    </weaponTags>
+    
+    <!-- 近战工具设置 - 当作近战武器使用时的属性 -->
+    <tools>
+      <li>
+        <label>枪托</label>                    <!-- 攻击部位名称 -->
+        <capacities>
+          <li>Blunt</li>                       <!-- 钝击伤害 -->
+        </capacities>
+        <power>9</power>                       <!-- 攻击力 -->
+        <cooldownTime>2</cooldownTime>         <!-- 攻击冷却时间 -->
+      </li>
+      <li>
+        <label>枪管</label>                    <!-- 攻击部位名称 -->
+        <capacities>
+          <li>Blunt</li>                       <!-- 钝击伤害 -->
+          <li>Poke</li>                        <!-- 刺击伤害 -->
+        </capacities>
+        <power>9</power>                       <!-- 攻击力 -->
+        <cooldownTime>2</cooldownTime>         <!-- 攻击冷却时间 -->
+      </li>
+    </tools>
+  </ThingDef>
+
+  <!-- 毒素狙击步枪子弹 - 基于原版狙击步枪子弹 -->
+  <ThingDef ParentName="BaseBullet">
+    <defName>Bullet_ToxinSniperRifle</defName>
+    <label>毒素狙击步枪子弹</label>
+    
+    <!-- 子弹贴图设置 -->
+    <graphicData>
+      <texPath>projectile/armo1</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <!-- 自发光着色器配置 - 高浓度毒素绿色效果 -->
+      <shaderType>TransparentPostLight</shaderType> <!-- 自发光着色器 -->
+      <color>(0.1, 0.8, 0.1)</color> <!-- 深绿色毒素着色，表示高浓度 -->
+      <drawSize>0.9</drawSize> <!-- 比其他子弹更大，表示狙击枪子弹 -->
+    </graphicData>
+    
+    <!-- 子弹属性设置 -->
+    <projectile>
+      <damageDef>ToxicSniperRifle</damageDef>  <!-- 伤害类型：毒素狙击步枪伤害 -->
+      <damageAmountBase>25</damageAmountBase>  <!-- 基础伤害：25点（与原版狙击步枪相同） -->
+      <stoppingPower>1.5</stoppingPower>      <!-- 停止力（与原版相同） -->
+      <speed>100</speed>                       <!-- 子弹速度（与原版相同） -->
+      <armorPenetrationBase>0.20</armorPenetrationBase> <!-- 护甲穿透力，比其他毒素武器更高 -->
+    </projectile>
+  </ThingDef>
+</Defs> 

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{50745533-FCCD-449D-A9FB-56FF477ED242}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PromotionLib</RootNamespace>
+    <AssemblyName>PromotionLib</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\Assemblies\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>5</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>E:\捷豹\rimworlddll\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AlienRace">
+      <HintPath>E:\捷豹\rimworlddll\AlienRace.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>E:\捷豹\rimworlddll\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="HarmonyMod">
+      <HintPath>E:\捷豹\rimworlddll\HarmonyMod.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>E:\捷豹\rimworlddll\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.CSharp">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Http">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.AudioModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestWWWModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VideoModule">
+      <HintPath>E:\捷豹\rimworlddll\UnityEngine.VideoModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="comp\BuildingStrainClearComp.cs" />
+    <Compile Include="comp\ComplicationComp.cs" />
+    <Compile Include="comp\CompProperties_DisableBodyType.cs" />
+    <Compile Include="comp\HediffComp_VirusStrainContainer.cs" />
+    <Compile Include="comp\VirusStrainComp.cs" />
+    <Compile Include="Core\ComplicationHediff.cs" />
+    <Compile Include="Core\ComplicationSpawner.cs" />
+    <Compile Include="Core\IncubationController.cs" />
+    <Compile Include="Core\riwbioHediff.cs" />
+    <Compile Include="Core\VirusInfectivityController.cs" />
+    <Compile Include="DefOf\ValueDef.cs" />
+    <Compile Include="dev\heidffTest.cs" />
+    <Compile Include="dev\VirusStrainTest.cs" />
+    <Compile Include="infection\AirborneInfectionController.cs" />
+    <Compile Include="infection\ContactSpreadController.cs" />
+    <Compile Include="infection\FluidTransmissionController.cs" />
+    <Compile Include="kindsett\BaseUnionClone.cs" />
+    <Compile Include="kindsett\UnionCloneAssault.cs" />
+    <Compile Include="kindsett\UnionCloneHeavy.cs" />
+    <Compile Include="kindsett\UnionCommanderSett.cs" />
+    <Compile Include="Patches\customArmorDraw.cs" />
+    <Compile Include="Patches\RaceLSMPatche.cs" />
+    <Compile Include="Patches\wapenRend.cs" />
+    <Compile Include="Place\PlaceWorker_ShowEffectRange.cs" />
+    <Compile Include="pojo\Complication.cs" />
+    <Compile Include="Projectile\Bullet_ClusterBullet.cs" />
+    <Compile Include="Projectile\Bullet_ClusterRocket.cs" />
+    <Compile Include="Projectile\Bullet_healing_pistol.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="pojo\VirusStrain.cs" />
+    <Compile Include="Patches\UnionMilitaryNaming.cs" />
+    <Compile Include="PromotionLibMod.cs" />
+    <Compile Include="RwBioUI\MonoComp\forpawn.cs" />
+    <Compile Include="RwBioUI\MonoComp\keyevents.cs" />
+    <Compile Include="RwBioUI\MonoComp\ModelRotator.cs" />
+    <Compile Include="RwBioUI\MonoComp\StarLord.cs" />
+    <Compile Include="RwBioUI\UIMap\effMapData.cs" />
+    <Compile Include="RwBioUI\UIMap\UiMapData.cs" />
+    <Compile Include="RwBioUI\UI_LateInit.cs" />
+    <Compile Include="Utils\DictionaryExtensions.cs" />
+    <Compile Include="Utils\InfectionUtility.cs" />
+    <Compile Include="Utils\MathUtil.cs" />
+    <Compile Include="Utils\VirusConstraints.cs" />
+    <Compile Include="Utils\VirusStrainUtils.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+    <Folder Include="Hediffs\" />
+    <Folder Include="Jobs\" />
+    <Folder Include="obj\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitattributes" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

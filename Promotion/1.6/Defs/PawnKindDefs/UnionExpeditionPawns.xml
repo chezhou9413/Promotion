@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+    <!-- 联盟远征军克隆人突击兵 -->
+    <PawnKindDef>
+        <defName>UnionCloneAssault</defName>
+        <label>克隆人突击兵</label>
+        <race>Human</race>
+        <defaultFactionType>UnionExpedition</defaultFactionType>
+        <combatPower>120</combatPower>
+        <canArriveManhunter>false</canArriveManhunter>
+        <canBeSapper>true</canBeSapper>
+        <chemicalAddictionChance>0</chemicalAddictionChance>
+        <invNutrition>2.55</invNutrition>
+        <itemQuality>Normal</itemQuality>
+        <backstoryCryptosleepCommonality>0</backstoryCryptosleepCommonality>
+        <initialResistanceRange>13~21</initialResistanceRange>
+        <initialWillRange>0~1</initialWillRange>
+        <apparelMoney>6000~10000</apparelMoney>
+        <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+        <apparelRequired>
+            <li>CloneRecon_Armor</li>
+            <li>CloneRecon_Helmet</li>
+        </apparelRequired>
+        <weaponMoney>1200~2500</weaponMoney>
+        <weaponTags>
+            <li>UnionWeapon</li>
+        </weaponTags>
+        <apparelTags>
+            <li>UnionArmor</li>
+        </apparelTags>
+        <techHediffsMoney>1000~1500</techHediffsMoney>
+        <techHediffsTags>
+            <li>Advanced</li>
+            <li>ImplantEmpireCommon</li>
+        </techHediffsTags>
+        <techHediffsChance>0.15</techHediffsChance>
+        <biocodeWeaponChance>0.1</biocodeWeaponChance>
+        <!-- 注意：PawnKindDef不支持allowedRaces字段，种族限制通过race字段实现 -->
+    </PawnKindDef>
+
+
+    <!-- 联盟远征军指挥官 -->
+    <PawnKindDef>
+        <defName>UnionCommander</defName>
+        <label>克隆人指挥官</label>
+        <race>Human</race>
+        <defaultFactionType>UnionExpedition</defaultFactionType>
+        <combatPower>200</combatPower>
+        <canArriveManhunter>false</canArriveManhunter>
+        <canBeSapper>true</canBeSapper>
+        <chemicalAddictionChance>0</chemicalAddictionChance>
+        <invNutrition>2.55</invNutrition>
+        <itemQuality>Good</itemQuality>
+        <backstoryCryptosleepCommonality>0</backstoryCryptosleepCommonality>
+        <initialResistanceRange>18~28</initialResistanceRange>
+        <initialWillRange>0~1</initialWillRange>
+        <apparelMoney>6000~10000</apparelMoney>
+        <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+        <apparelRequired>
+            <li>CloneSoldier_Armor</li>
+            <li>CloneSoldier_Helmet</li>
+        </apparelRequired>
+        <weaponMoney>1200~2500</weaponMoney>
+        <weaponTags>
+            <li>UnionWeapon</li>
+        </weaponTags>
+        <apparelTags>
+            <li>UnionArmor</li>
+        </apparelTags>
+        <techHediffsMoney>2000~3000</techHediffsMoney>
+        <techHediffsTags>
+            <li>Advanced</li>
+            <li>ImplantEmpireCommon</li>
+            <li>ImplantEmpireRoyal</li>
+        </techHediffsTags>
+        <techHediffsChance>0.3</techHediffsChance>
+        <biocodeWeaponChance>0.2</biocodeWeaponChance>
+        <!-- 注意：PawnKindDef不支持allowedRaces字段，种族限制通过race字段实现 -->
+    </PawnKindDef>
+
+    <!-- 联盟远征军克隆人火力兵 -->
+    <PawnKindDef>
+        <defName>UnionCloneHeavy</defName>
+        <label>克隆人火力兵</label>
+        <race>Human</race>
+        <defaultFactionType>UnionExpedition</defaultFactionType>
+        <combatPower>180</combatPower>
+        <canArriveManhunter>false</canArriveManhunter>
+        <canBeSapper>false</canBeSapper>
+        <chemicalAddictionChance>0</chemicalAddictionChance>
+        <invNutrition>2.55</invNutrition>
+        <itemQuality>Good</itemQuality>
+        <backstoryCryptosleepCommonality>0</backstoryCryptosleepCommonality>
+        <initialResistanceRange>15~25</initialResistanceRange>
+        <initialWillRange>0~1</initialWillRange>
+        <apparelMoney>8000~12000</apparelMoney>
+        <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+        <apparelRequired>
+            <li>CloneAlliHeavy_Armor</li>
+            <li>CloneAlliHeavy_Helmet</li>
+        </apparelRequired>
+        <weaponMoney>1500~3000</weaponMoney>
+        <weaponTags>
+            <li>UnionWeapon</li>
+        </weaponTags>
+        <apparelTags>
+            <li>UnionArmor</li>
+            <li>HeavyArmor</li>
+        </apparelTags>
+        <techHediffsMoney>1500~2500</techHediffsMoney>
+        <techHediffsTags>
+            <li>Advanced</li>
+            <li>ImplantEmpireCommon</li>
+        </techHediffsTags>
+        <techHediffsChance>0.25</techHediffsChance>
+        <biocodeWeaponChance>0.15</biocodeWeaponChance>
+        <!-- 注意：PawnKindDef不支持allowedRaces字段，种族限制通过race字段实现 -->
+    </PawnKindDef>
+</Defs> 

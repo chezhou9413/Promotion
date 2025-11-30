@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- 五式“临界点”电磁格斗步枪（近距离强化、连发5、间隔6tick） -->
+  <ThingDef ParentName="BaseHumanMakeableGun">
+    <defName>Gun_Type5EM_CQC</defName>
+    <label>五式“临界点”电磁格斗步枪</label>
+    <description>截短式的联盟五式电磁速射步枪，更轻更短的枪身使其操控性更好，但中远距离作战性能有所下降，因此常配发给需要近距离作战的作战单位。</description>
+
+    <!-- 贴图：把纹理放到 Textures/weapon/Gun_5Rifle_CQC.png -->
+    <graphicData>
+      <texPath>weapon/Gun_5Rifle_CQC</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+
+    <soundInteract>Interact_Rifle</soundInteract>
+
+    <!-- 制作与研究/经验 -->
+    <recipeMaker>
+      <researchPrerequisite>PrecisionRifling</researchPrerequisite>
+      <skillRequirements>
+        <Crafting>6</Crafting>
+      </skillRequirements>
+      <!-- 注意：ThingDef的recipeMaker不支持workSkillLearnFactor字段 -->
+      <workSkill>Crafting</workSkill>
+      <displayPriority>400</displayPriority>
+    </recipeMaker>
+
+    <!-- 分类/标签：BaseHumanMakeableGun已经包含了WeaponsRanged分类 -->
+    <weaponTags>
+      <li>UnionWeapon</li>
+      <li>SpacerGun</li>
+      <li>Gun</li>
+    </weaponTags>
+    <weaponClasses>
+      <li>RangedHeavy</li>
+    </weaponClasses>
+
+    <!-- 花费（你未指定，我给了一个略低于标准步枪的成本，按需改） -->
+    <costList>
+      <Steel>60</Steel>
+      <ComponentIndustrial>3</ComponentIndustrial>
+      <ComponentSpacer>1</ComponentSpacer>
+    </costList>
+
+    <statBases>
+      <!-- 面板：价值 1080 -->
+      <MarketValue>1080</MarketValue>
+      <!-- 面板：质量 1.4kg -->
+      <Mass>1.4</Mass>
+      <!-- 注意：stackLimit不是有效的统计定义，武器默认堆叠限制为1 -->
+      <!-- 面板：美观度 4 -->
+      <Beauty>4</Beauty>
+      <!-- 面板：易燃性 10% -->
+      <Flammability>0.10</Flammability>
+      <!-- 面板：老化速率 0.5/天 -->
+      <DeteriorationRate>0.5</DeteriorationRate>
+
+      <!-- 面板：预热时间 0.3、冷却时间 0.1s -->
+      <RangedWeapon_Cooldown>0.1</RangedWeapon_Cooldown>
+      <!-- 命中精度（你没给；近战用枪，给了近距高、远距差的倾向） -->
+      <AccuracyTouch>0.85</AccuracyTouch>
+      <AccuracyShort>0.80</AccuracyShort>
+      <AccuracyMedium>0.55</AccuracyMedium>
+      <AccuracyLong>0.35</AccuracyLong>
+
+      <!-- 工作量：180（注意：原版常用上万，这里按你面板给 180） -->
+      <WorkToMake>180</WorkToMake>
+    </statBases>
+
+    <!-- 技术级别：太空时代 -->
+    <techLevel>Spacer</techLevel>
+
+    <tradeTags>
+      <li>WeaponRanged</li>
+    </tradeTags>
+
+    <!-- 面板：连发数量 5；连发间隔 6tick；射程 10；预热 0.3 -->
+    <verbs>
+      <li>
+        <verbClass>Verb_Shoot</verbClass>
+        <hasStandardCommand>true</hasStandardCommand>
+        <defaultProjectile>Bullet_Type5EM_CQC</defaultProjectile>
+        <warmupTime>0.3</warmupTime>
+        <range>10</range>
+        <ticksBetweenBurstShots>6</ticksBetweenBurstShots>
+        <burstShotCount>5</burstShotCount>
+        <soundCast>Shot_AssaultRifle</soundCast>
+        <soundCastTail>GunTail_Medium</soundCastTail>
+        <muzzleFlashScale>9</muzzleFlashScale>
+      </li>
+    </verbs>
+
+    <!-- 近战砸人（随手保留，略低值） -->
+    <tools>
+      <li>
+        <label>stock</label>
+        <capacities><li>Blunt</li></capacities>
+        <power>8</power>
+        <cooldownTime>2</cooldownTime>
+      </li>
+      <li>
+        <label>barrel</label>
+        <capacities><li>Blunt</li></capacities>
+        <power>9</power>
+        <cooldownTime>2</cooldownTime>
+      </li>
+    </tools>
+  </ThingDef>
+
+  <!-- 弹药：面板 伤害 6；护甲穿透 0.05；抑止能力 1.0；速度给默认 70 -->
+  <ThingDef ParentName="BaseBullet">
+    <defName>Bullet_Type5EM_CQC</defName>
+    <label>电磁弹</label>
+    <graphicData>
+      <texPath>Things/Projectile/Bullet_Small</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+    <projectile>
+      <damageDef>Bullet</damageDef>
+      <damageAmountBase>6</damageAmountBase>
+      <armorPenetrationBase>0.05</armorPenetrationBase>
+      <stoppingPower>1.0</stoppingPower>
+      <speed>70</speed>
+    </projectile>
+  </ThingDef>
+
+</Defs>

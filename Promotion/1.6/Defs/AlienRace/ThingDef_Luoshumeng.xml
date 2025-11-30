@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <AlienRace.ThingDef_AlienRace ParentName="BasePawn">
+        <defName>Luoshumeng</defName>
+        <label>落枢梦</label>
+        <description>An empty template for creating a new Alien Race.</description>
+        <alienRace>
+            <raceRestriction>
+                <blackGeneTags>
+                    <li>EyeColor</li>
+                    <li>HairStyle</li>
+                    <li>BeardStyle</li>
+                    <li>SkinColorOverride</li>
+                    <li>Tail</li>
+                    <li>BodyType</li>
+                    <li>Ears</li>
+                </blackGeneTags>
+                <blackEndoCategories>
+                    <li>Melanin</li>
+                    <li>HairColor</li>
+                    <li>BodyType</li>
+                    <li>Headbone</li>
+                    <li>Head</li>
+                    <li>Ears</li>
+                    <li>Nose</li>
+                    <li>Jaw</li>
+                    <li>Voice</li>
+                </blackEndoCategories>
+                <!-- 仅限本种族可穿戴的服装清单 -->
+                <apparelList>
+                    <li>LSMtestApparel</li>
+                </apparelList>
+            </raceRestriction>
+
+            <styleSettings>
+                <li>
+                    <key>HairDef</key>
+                    <value>
+                        <hasStyle>true</hasStyle>
+                        <styleTagsOverride>
+                            <li>Luoshumeng_Category</li>
+                        </styleTagsOverride>
+                    </value>
+                </li>
+                <li>
+                    <key>BeardDef</key>
+                    <value>
+                        <hasStyle>false</hasStyle>
+                    </value>
+                </li>
+                <li>
+                    <key>TattooDef</key>
+                    <value>
+                        <hasStyle>false</hasStyle>
+                    </value>
+                </li>
+            </styleSettings>
+
+            <generalSettings>
+                <!-- 设置为只有女性的种族 -->
+                <maleGenderProbability>0</maleGenderProbability>
+                <minAgeForAdulthood>18</minAgeForAdulthood>
+                <immuneToXenophobia>false</immuneToXenophobia>
+                <immuneToAge>true</immuneToAge>                <!-- 机械体免疫衰老 -->
+                <humanRecipeImport>false</humanRecipeImport>                <!-- 机械体不使用人类医疗 -->
+
+                <alienPartGenerator>
+                    <bodyTypes>
+                        <li>Female</li>
+                    </bodyTypes>
+                    <headTypes Inherit="False">
+                        <li>Luoshumeng_Head_A</li>
+                    </headTypes>
+
+                    <!-- 关键修改：确保颜色通道配置正确 -->
+                    <colorChannels>
+                        <!-- 皮肤颜色设置 - 完全固定，不受年龄影响 -->
+                        <li>
+                            <name>skin</name>
+                            <first Class="ColorGenerator_Single">
+                                <color>RGB(255,255,255)</color>
+                            </first>
+                        </li>
+                        <!-- 头发颜色设置 - 完全固定，不受年龄影响 -->
+                        <li>
+                            <name>hair</name>
+                            <first Class="ColorGenerator_Single">
+                                <color>RGB(255,255,255)</color>
+                            </first>
+                        </li>
+                    </colorChannels>
+
+                    <bodyAddons>
+                        <!-- 光环 -->
+                        <li>
+                            <name>Luoshumeng_Halo</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/Luoshumeng/Halo/LSM_Gear</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Apparel />
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0.1, -0.2)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(-0.03, -0.2)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(-0.03, -0.2)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0.1, -0.2)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <!-- 头 -->
+                        <li>
+                            <name>Luoshumeng_Head</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/Luoshumeng/Head/LSM_Head</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Apparel />
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.2</layerOffset>
+                                    <offset>(0.1, -0.006)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.2</layerOffset>
+                                    <offset>(0, -0.0065)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.2</layerOffset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.2</layerOffset>
+                                    <offset>(0.1, -0.006)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <!-- 脸纹 -->
+                        <li>
+                            <name>Luoshumeng_Trace</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/Luoshumeng/Trace/LSM_Trace</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Apparel />
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0.1, 0)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0, -0.004)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.4</layerOffset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0.1, 0)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <!-- 头发 -->
+                        <li>
+                            <name>Luoshumeng_Hair</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/Luoshumeng/Hair/LSM_FrontHair</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Apparel />
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.3</layerOffset>
+                                    <offset>(0.1, 0.007)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.3</layerOffset>
+                                    <offset>(0, -0.0095)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.3</layerOffset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.3</layerOffset>
+                                    <offset>(0.1, 0.007)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <!-- 后发 -->
+                        <li>
+                            <name>Luoshumeng_HairBack</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/Luoshumeng/HairBack/LSM_HairBack</path>
+                            <linkVariantIndexWithPrevious>true</linkVariantIndexWithPrevious>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>false</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Apparel />
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0.1, 0.007)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0, -0.0095)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.4</layerOffset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.4</layerOffset>
+                                    <offset>(0.1, 0.007)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+
+                        <!-- 眼睛 -->
+                        <li>
+                            <name>Luoshumeng_Eye</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/Luoshumeng/Eye/LSM_Eye</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Apparel />
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.25</layerOffset>
+                                    <offset>(0.101, 0.003)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.25</layerOffset>
+                                    <offset>(0, -0.01)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.25</layerOffset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.25</layerOffset>
+                                    <offset>(0.101, 0.003)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                    </bodyAddons>
+                </alienPartGenerator>
+            </generalSettings>
+
+            <graphicPaths>
+                <skinShader>Cutout</skinShader>
+                <head>
+                    <path>AlienRace/Luoshumeng/Head/</path>
+                </head>
+                <body>
+                    <path>AlienRace/Luoshumeng/Body/LSM_Body</path>
+                </body>
+                <skeleton>Path/To/Skeleton</skeleton>
+            </graphicPaths>
+        </alienRace>
+
+        <!-- 添加工具定义，确保种族有基本的攻击能力 -->
+        <tools>
+            <li>
+                <label>left fist</label>
+                <labelNoLocation>fist</labelNoLocation>
+                <capacities>
+                    <li>Blunt</li>
+                </capacities>
+                <power>8.2</power>
+                <cooldownTime>2</cooldownTime>
+                <linkedBodyPartsGroup>LeftHand</linkedBodyPartsGroup>
+                <surpriseAttack>
+                    <extraMeleeDamages>
+                        <li>
+                            <def>Stun</def>
+                            <amount>14</amount>
+                        </li>
+                    </extraMeleeDamages>
+                </surpriseAttack>
+            </li>
+            <li>
+                <label>right fist</label>
+                <labelNoLocation>fist</labelNoLocation>
+                <capacities>
+                    <li>Blunt</li>
+                </capacities>
+                <power>8.2</power>
+                <cooldownTime>2</cooldownTime>
+                <linkedBodyPartsGroup>RightHand</linkedBodyPartsGroup>
+                <surpriseAttack>
+                    <extraMeleeDamages>
+                        <li>
+                            <def>Stun</def>
+                            <amount>14</amount>
+                        </li>
+                    </extraMeleeDamages>
+                </surpriseAttack>
+            </li>
+            <li>
+                <label>head</label>
+                <capacities>
+                    <li>Blunt</li>
+                </capacities>
+                <power>5</power>
+                <cooldownTime>2</cooldownTime>
+                <linkedBodyPartsGroup>HeadAttackTool</linkedBodyPartsGroup>
+                <ensureLinkedBodyPartsGroupAlwaysUsable>true</ensureLinkedBodyPartsGroupAlwaysUsable>
+                <chanceFactor>0.2</chanceFactor>
+            </li>
+        </tools>
+
+        <statBases>
+            <MarketValue>1500</MarketValue>
+            <MoveSpeed>4.6</MoveSpeed>
+            <Flammability>0.7</Flammability>
+        </statBases>
+        <race>
+            <thinkTreeMain>Humanlike</thinkTreeMain>
+            <thinkTreeConstant>HumanlikeConstant</thinkTreeConstant>
+            <intelligence>Humanlike</intelligence>
+            <renderTree>Luoshumeng</renderTree>
+            <makesFootprints>true</makesFootprints>
+            <lifeExpectancy>8000</lifeExpectancy>
+            <leatherDef>Leather_Human</leatherDef>
+            <nameCategory>HumanStandard</nameCategory>
+            <!-- 使用专门的机械身体类型 -->
+            <body>LABOl_MechanicalBody</body>
+            <baseBodySize>1</baseBodySize>
+            <baseHealthScale>1</baseHealthScale>
+            <foodType>OmnivoreHuman</foodType>
+            <gestationPeriodDays>30</gestationPeriodDays>
+            <meatMarketValue>1</meatMarketValue>
+            <manhunterOnDamageChance>0.1</manhunterOnDamageChance>
+            <manhunterOnTameFailChance>0.02</manhunterOnTameFailChance>
+            <!-- 使用自定义的命名规则包 -->
+            <nameGenerator>NamerPersonLuoshumeng</nameGenerator>
+
+            <!-- 添加必要的种族属性 -->
+            <soundCallIntervalRange>2000~5000</soundCallIntervalRange>
+            <canBecomeShambler>true</canBecomeShambler>
+            <hasUnnaturalCorpse>true</hasUnnaturalCorpse>
+            <soundMeleeDodge>Pawn_MeleeDodge</soundMeleeDodge>
+
+            <lifeStageAges>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeBaby</def>
+                    <minAge>0</minAge>
+                </li>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeChild</def>
+                    <minAge>3</minAge>
+                </li>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeTeenager</def>
+                    <minAge>13</minAge>
+                </li>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeAdult</def>
+                    <minAge>18</minAge>
+                </li>
+            </lifeStageAges>
+        </race>
+    </AlienRace.ThingDef_AlienRace>
+</Defs>

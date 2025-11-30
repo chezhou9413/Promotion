@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 新人类服装基础定义 -->
+    <ThingDef Name="ApparelBase_newHuman" ParentName="ApparelBase" Abstract="True">
+        <thingClass>Apparel</thingClass>
+        <category>Item</category>
+        <selectable>True</selectable>
+        <pathCost>10</pathCost>
+        <useHitPoints>True</useHitPoints>
+        <techLevel>Industrial</techLevel>
+        <tradeability>All</tradeability>
+        
+        <!-- 图形数据：地面随机旋转角度、绘制尺寸和偏移 -->
+        <graphicData>
+            <onGroundRandomRotateAngle>35</onGroundRandomRotateAngle>
+            <drawSize>1.0</drawSize>
+            <drawOffset>(0,0,0)</drawOffset>
+        </graphicData>
+        
+        <drawGUIOverlay>true</drawGUIOverlay>
+        
+        <!-- 基础属性：最大生命值、可燃性、劣化率、美观度 -->
+        <statBases>
+            <MaxHitPoints>120</MaxHitPoints>
+            <Flammability>1.0</Flammability>
+            <DeteriorationRate>1.0</DeteriorationRate>
+            <Beauty>1</Beauty>
+        </statBases>
+        
+        <altitudeLayer>Item</altitudeLayer>
+        <alwaysHaulable>True</alwaysHaulable>
+        <tickerType>Never</tickerType>
+        <burnableByRecipe>true</burnableByRecipe>
+        <smeltable>true</smeltable>
+        
+        <!-- 组件：可禁止、可着色 -->
+        <comps>
+            <li Class="CompProperties_Forbiddable"/>
+            <li>
+                <compClass>CompColorable</compClass>
+            </li>
+        </comps>
+    </ThingDef>
+    
+    <!-- 新人类服装基础抽象类 -->
+    <ThingDef Name="newHuman_ApparelBase" ParentName="ApparelBase_newHuman" Abstract="True">
+        <graphicData>
+            <graphicClass>Graphic_Single</graphicClass>
+        </graphicData>
+        
+        <!-- 服装属性：不关心尸体穿着、不使用磨损图形遮罩、每日磨损为0 -->
+        <apparel>
+            <careIfWornByCorpse>false</careIfWornByCorpse>
+            <useWornGraphicMask>false</useWornGraphicMask>
+            <wearPerDay>0</wearPerDay>
+            <tags>
+                <li>newHumanApparel</li>
+            </tags>
+        </apparel>
+        
+        <tradeability>Sellable</tradeability>
+        <tradeTags>
+            <li>Apparel</li>
+        </tradeTags>
+        
+        <!-- 基础属性：可燃性、劣化率、美观度 -->
+        <statBases>
+            <Flammability>0.5</Flammability>
+            <DeteriorationRate>1</DeteriorationRate>
+            <Beauty>1</Beauty>
+        </statBases>
+        
+        <!-- 制作配方：工作速度统计、工作技能、工作效果、工作声音 -->
+        <recipeMaker>
+            <workSpeedStat>GeneralLaborSpeed</workSpeedStat>
+            <workSkill>Crafting</workSkill>
+            <effectWorking>Tailor</effectWorking>
+            <soundWorking>Recipe_Tailor</soundWorking>
+            <recipeUsers>
+                <li>HandTailoringBench</li>
+                <li>ElectricTailoringBench</li>
+            </recipeUsers>
+            <unfinishedThingDef>UnfinishedApparel</unfinishedThingDef>
+            <researchPrerequisites>
+                <li>ComplexClothing</li>
+            </researchPrerequisites>
+            <defaultIngredientFilter>
+                <categories>
+                    <li>Root</li>
+                </categories>
+                <disallowedThingDefs>
+                    <li>Gold</li>
+                    <li>Silver</li>
+                    <li>Jade</li>
+                    <li>Uranium</li>
+                </disallowedThingDefs>
+            </defaultIngredientFilter>
+        </recipeMaker>
+    </ThingDef>
+</Defs>

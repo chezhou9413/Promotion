@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- 毒素突击步枪 - 基于原版突击步枪 -->
+  <ThingDef ParentName="BaseHumanMakeableGun">
+    <defName>Gun_ToxinAssaultRifle</defName>
+    <label>毒素突击步枪</label>
+    <description>一种通用的气体操作毒素突击步枪，适用于野外或城市作战。它具有良好的射程、适中的威力和良好的精度。发射带有毒素的子弹，能够对目标造成持续的毒素伤害。</description>
+    
+    <!-- 武器贴图设置 -->
+    <graphicData>
+      <texPath>weapon/Gun_ToxinAssaultRifle</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>1.3</drawSize>  <!-- 武器贴图放大到1.3倍 -->
+    </graphicData>
+    
+    <!-- 武器UI图标缩放 -->
+    <uiIconScale>1.2</uiIconScale>  <!-- UI界面图标放大到1.2倍 -->
+    
+    <!-- 武器交互音效 -->
+    <soundInteract>Interact_Rifle</soundInteract>
+    
+    <!-- 武器分类 - 影响AI使用策略 -->
+    <weaponClasses>
+      <li>RangedHeavy</li>  <!-- 重型远程武器 -->
+    </weaponClasses>
+    
+    <!-- 制作配方设置 -->
+    <recipeMaker>
+      <researchPrerequisite>PrecisionRifling</researchPrerequisite> <!-- 前置研究：精密膛线 -->
+      <skillRequirements>
+        <Crafting>6</Crafting> <!-- 制作技能要求：6级 -->
+      </skillRequirements>
+      <displayPriority>421</displayPriority> <!-- 显示优先级，略高于原版突击步枪 -->
+    </recipeMaker>
+    
+    <!-- 奖励标签 -->
+    <thingSetMakerTags><li>RewardStandardQualitySuper</li></thingSetMakerTags>
+    
+    <!-- 武器基础属性 - 基于原版突击步枪数据 -->
+    <statBases>
+      <WorkToMake>42000</WorkToMake>           <!-- 制作工作量，略高于原版 -->
+      <Mass>3.7</Mass>                         <!-- 重量（kg），略重于原版 -->
+      <AccuracyTouch>0.60</AccuracyTouch>      <!-- 近距离精度 -->
+      <AccuracyShort>0.70</AccuracyShort>      <!-- 短距离精度 -->
+      <AccuracyMedium>0.65</AccuracyMedium>    <!-- 中距离精度 -->
+      <AccuracyLong>0.55</AccuracyLong>        <!-- 远距离精度 -->
+      <RangedWeapon_Cooldown>1.70</RangedWeapon_Cooldown> <!-- 武器冷却时间 -->
+    </statBases>
+    
+    <!-- 制作材料成本 -->
+    <costList>
+      <Steel>65</Steel>                        <!-- 钢铁：65个 -->
+      <ComponentIndustrial>8</ComponentIndustrial> <!-- 工业零件：8个 -->
+      <Chemfuel>15</Chemfuel>                  <!-- 化合燃料：15个（用于毒素系统） -->
+    </costList>
+    
+    <!-- 武器动作设置 -->
+    <verbs>
+      <li>
+        <verbClass>Verb_Shoot</verbClass>      <!-- 射击动作类 -->
+        <hasStandardCommand>true</hasStandardCommand> <!-- 有标准命令 -->
+        <defaultProjectile>Bullet_ToxinAssaultRifle</defaultProjectile> <!-- 默认子弹 -->
+        <warmupTime>1.0</warmupTime>           <!-- 瞄准时间 -->
+        <range>30.9</range>                    <!-- 射程，与原版相同 -->
+        <burstShotCount>3</burstShotCount>     <!-- 连发数量：3发 -->
+        <ticksBetweenBurstShots>10</ticksBetweenBurstShots> <!-- 连发间隔：10tick -->
+        <soundCast>Shot_AssaultRifle</soundCast>   <!-- 射击音效 -->
+        <soundCastTail>GunTail_Medium</soundCastTail> <!-- 射击尾音 -->
+        <muzzleFlashScale>9</muzzleFlashScale> <!-- 枪口火焰大小 -->
+      </li>
+    </verbs>
+    
+    <!-- 武器标签 - 用于AI和贸易系统 -->
+    <weaponTags>
+    </weaponTags>
+    
+    <!-- 近战工具设置 - 当作近战武器使用时的属性 -->
+    <tools>
+      <li>
+        <label>枪托</label>                    <!-- 攻击部位名称 -->
+        <capacities>
+          <li>Blunt</li>                       <!-- 钝击伤害 -->
+        </capacities>
+        <power>9</power>                       <!-- 攻击力 -->
+        <cooldownTime>2</cooldownTime>         <!-- 攻击冷却时间 -->
+      </li>
+      <li>
+        <label>枪管</label>                    <!-- 攻击部位名称 -->
+        <capacities>
+          <li>Blunt</li>                       <!-- 钝击伤害 -->
+          <li>Poke</li>                        <!-- 刺击伤害 -->
+        </capacities>
+        <power>9</power>                       <!-- 攻击力 -->
+        <cooldownTime>2</cooldownTime>         <!-- 攻击冷却时间 -->
+      </li>
+    </tools>
+  </ThingDef>
+
+  <!-- 毒素突击步枪子弹 - 基于原版突击步枪子弹 -->
+  <ThingDef ParentName="BaseBullet">
+    <defName>Bullet_ToxinAssaultRifle</defName>
+    <label>毒素突击步枪子弹</label>
+    
+    <!-- 子弹贴图设置 -->
+    <graphicData>
+      <texPath>projectile/armo1</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <!-- 自发光着色器配置 - 毒素绿色效果 -->
+      <shaderType>TransparentPostLight</shaderType> <!-- 自发光着色器 -->
+      <color>(0.2, 0.9, 0.2)</color> <!-- 毒素绿色着色，略深一些 -->
+      <drawSize>0.7</drawSize> <!-- 比冲锋枪子弹稍大 -->
+    </graphicData>
+    
+    <!-- 子弹属性设置 -->
+    <projectile>
+      <damageDef>ToxicAssaultRifle</damageDef>  <!-- 伤害类型：毒素突击步枪伤害 -->
+      <damageAmountBase>11</damageAmountBase>   <!-- 基础伤害：11点（与原版突击步枪相同） -->
+      <speed>70</speed>                         <!-- 子弹速度（与原版相同） -->
+      <armorPenetrationBase>0.12</armorPenetrationBase> <!-- 护甲穿透力 -->
+    </projectile>
+  </ThingDef>
+</Defs> 

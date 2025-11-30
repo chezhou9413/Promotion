@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <HediffDef>
+    <defName>RimBio_SilentVirus</defName>
+    <label>无害病毒感染</label>
+    <description>一种不会造成直接伤害，但其特性正在被观察的病毒感染。</description>
+    <hediffClass>PromotionLib.riwbioHediff</hediffClass>
+    <initialSeverity>0.01</initialSeverity>
+    <tendable>false</tendable>
+    <isBad>false</isBad>
+    <comps>
+      <li Class="HediffCompProperties_SeverityPerDay">
+        <severityPerDay>0.05</severityPerDay>        <!-- 每天严重程度+0.05 -->
+      </li>
+      <li Class="PromotionLib.HediffCompProperties_VirusStrainContainer">
+        <type>PandemicVirus</type>
+
+        <!-- 毒株唯一标识符 -->
+        <uniqueID>silent-virus-001</uniqueID>
+
+        <!-- 毒株名称 -->
+        <strainName>无害观察病毒</strainName>
+
+        <!-- 传染性（影响感染传播概率） -->
+        <infectivity>30</infectivity>
+
+        <!-- 致病性（越高越容易导致症状） -->
+        <pathogenicity>30</pathogenicity>
+
+        <!-- 抗原强度（影响免疫反应强度） -->
+        <antigenStrength>0.5</antigenStrength>
+
+        <!-- 空气传播能力（影响空气中存活时间） -->
+        <airSurvivability>30</airSurvivability>
+
+        <!-- 表面残留能力（影响病毒在物品表面的携带概率） -->
+        <surfacePersistence>0</surfacePersistence>
+
+        <!-- 突变率（影响毒株变异或进化） -->
+        <mutationRate>5</mutationRate>
+
+        <!-- 潜伏期下限（单位：tick） -->
+        <minIncubationPeriod>200</minIncubationPeriod>
+
+        <!-- 潜伏期上限（单位：tick） -->
+        <maxIncubationPeriod>1000</maxIncubationPeriod>
+
+        <!-- 毒株版本号（可用于升级或识别） -->
+        <strainVersion>1</strainVersion>
+
+        <!-- 是否为人工培养毒株 -->
+        <isCultivated>false</isCultivated>
+
+        <!-- 最低适应温度（℃） -->
+        <minAdaptedTemperature>-20</minAdaptedTemperature>
+
+        <!-- 最高适应温度（℃） -->
+        <maxAdaptedTemperature>60</maxAdaptedTemperature>
+
+        <!-- 是否支持体液传播（例如：血液、唾液） -->
+        <fluidTransmission>true</fluidTransmission>
+
+        <!-- 是否为机械病毒（可用于区分机械体专属病毒） -->
+        <isMechVirus>false</isMechVirus>
+
+        <!-- 是否为丧尸病毒（影响相关逻辑） -->
+        <isZombieVirus>false</isZombieVirus>
+
+        <!-- 是否具有正面效果（如增强体能等） -->
+        <isPositiveEffect>false</isPositiveEffect>
+
+        <!-- 是否为永久效果（如永久加成） -->
+        <isPermanentEffect>false</isPermanentEffect>
+
+        <!-- 是否已中和（用于调试或事件控制） -->
+        <isNeutralized>false</isNeutralized>
+
+        <!-- 感染时的默认严重程度 -->
+        <infectionSeverity>0.2</infectionSeverity>
+
+        <!-- 毒株附带的症状（字符串 ID） -->
+        <symptoms>
+          <li>RimBio_Complication_Fatigue</li>          <!-- 疲劳症状 -->
+          <li>RimBio_Complication_SkinRash</li>          
+          <li>RimBio_Complication_CognitiveDecline</li>        
+        </symptoms>
+
+        <!-- 影响的目标种族（DefName） -->
+        <targetRace>
+          <li>Human</li>          <!-- 只影响人类 -->
+        </targetRace>
+
+        <!-- 毒株基因标签（可用于识别或合成） -->
+        <strainGene>
+          <li>GeneA</li>
+          <li>GeneB</li>
+          <li>GeneC</li>
+        </strainGene>
+
+        <!-- 特殊毒株基因标签 -->
+        <specialStrainGene>
+          <li>ObservationTag</li>
+        </specialStrainGene>
+        <CanInfectAnimals>false</CanInfectAnimals>
+      </li>
+    </comps>
+    <stages>
+      <li>
+        <label>初期</label>
+        <minSeverity>0.01</minSeverity>
+        <becomeVisible>true</becomeVisible>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>0</offset>            <!-- 无任何实际影响 -->
+          </li>
+        </capMods>
+      </li>
+      <li>
+        <label>发展中</label>
+        <minSeverity>0.3</minSeverity>
+        <becomeVisible>true</becomeVisible>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>0</offset>
+          </li>
+        </capMods>
+      </li>
+      <li>
+        <label>高强度</label>
+        <minSeverity>0.7</minSeverity>
+        <becomeVisible>true</becomeVisible>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>0</offset>
+          </li>
+        </capMods>
+      </li>
+    </stages>
+  </HediffDef>
+
+</Defs>

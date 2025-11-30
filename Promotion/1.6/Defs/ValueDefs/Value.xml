@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- XML 声明：使用 UTF-8 编码，供 RimWorld 读取 -->
+<!-- 根节点开始，包含本文件内的全部定义（Defs） -->
+<Defs>
+  <!-- 定义一个新的统计属性（StatDef），用于表示病毒防护等级 -->
+  <StatDef>
+    <!-- 唯一标识符（defName）：在代码与其他 XML 中引用本属性时使用 -->
+    <defName>Disinfection_level</defName>
+    <!-- 游戏内显示名称（可本地化）：在 UI 中展示给玩家看到的名称 -->
+    <label>消毒等级</label>
+    <!-- 属性说明文本：用于鼠标悬停提示等位置，解释该属性的功能含义 -->
+    <description>针对接触传播，分为5级&#xA;5级消毒等级则不受接触传播影响&#xA;每级效果为：当被接触传播时：消毒等级*20%的被感染概率</description>
+    <!-- 默认基础数值：未被任何来源修改前的初始值（此处为 0） -->
+    <defaultBaseValue>0</defaultBaseValue>
+    <toStringStyle>Integer</toStringStyle>
+    <!-- 统计分类：决定该属性在检视面板中的归类位置（此处归入 Apparel） -->
+    <category>Apparel</category>
+    <!-- 是否在人形生物（Humanlikes）信息面板中显示该属性 -->
+    <showOnHumanlikes>true</showOnHumanlikes>
+    <showOnPawns>true</showOnPawns>
+    <showOnAnimals>true</showOnAnimals>
+    <showIfUndefined>false</showIfUndefined>
+    <minValue>0</minValue>
+    <maxValue>5</maxValue>
+    <!-- 装备统计累加部分：告诉游戏如何从装备中累加此属性 -->
+    <parts>
+      <li Class="StatPart_GearStatOffset">
+        <apparelStat>Disinfection_level</apparelStat>
+      </li>
+    </parts>
+  </StatDef>
+
+  <StatDef>
+    <!-- 唯一标识符（defName）：在代码与其他 XML 中引用本属性时使用 -->
+    <defName>Sealing_level</defName>
+    <!-- 游戏内显示名称（可本地化）：在 UI 中展示给玩家看到的名称 -->
+    <label>密封等级</label>
+    <!-- 属性说明文本：用于鼠标悬停提示等位置，解释该属性的功能含义 -->
+    <description>针对空气传播，分为5级&#xA;5级密封性则不受空气传播影响&#xA;每级效果为：当被空气传播时：密封性*20%的感染概率</description>
+    <!-- 默认基础数值：未被任何来源修改前的初始值（此处为 0） -->
+    <defaultBaseValue>0</defaultBaseValue>
+    <toStringStyle>Integer</toStringStyle>
+    <!-- 统计分类：决定该属性在检视面板中的归类位置（此处归入 Apparel） -->
+    <category>Apparel</category>
+    <!-- 是否在人形生物（Humanlikes）信息面板中显示该属性 -->
+    <showOnHumanlikes>true</showOnHumanlikes>
+    <showOnPawns>true</showOnPawns>
+    <showOnAnimals>true</showOnAnimals>
+    <showIfUndefined>false</showIfUndefined>
+    <minValue>0</minValue>
+    <maxValue>5</maxValue>
+    <!-- 装备统计累加部分：告诉游戏如何从装备中累加此属性 -->
+    <parts>
+      <li Class="StatPart_GearStatOffset">
+        <apparelStat>Sealing_level</apparelStat>
+      </li>
+    </parts>
+  </StatDef>
+  <!-- 根节点结束 -->
+</Defs>

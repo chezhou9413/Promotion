@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+    <!-- 联盟远征军派系定义 -->
+    <FactionDef>
+        <defName>UnionExpedition</defName>
+        <label>联盟军方</label>
+        <description>一支来到玩家所在的边缘世界的联盟远征舰队，在这里，这支舰队就代表了联盟官方甚至联盟本身。他们会追剿洛枢梦，与帝国余孽继续那场仍未签订停火条约的战争，也会和海盗势力展开交火。他们看待边缘世界的大部分人就像仰齐滨人看待外地乡巴佬一样充满了傲慢（当然，不包括大家都喜欢的绮罗猫猫、来自系外的先进金鼠鼠文明和同样处于高天之上的米莉安）。他们接受交易，需要奴隶来为他们开采资源，为此，他们不吝啬先进的科技产品甚至是武器装甲。运气好，你或许可以成为他们的仆从军，为他们完成一些他们不想干的活。</description>
+        <pawnSingular>联盟士兵</pawnSingular>
+        <pawnsPlural>联盟士兵</pawnsPlural>
+        <categoryTag>Outlander</categoryTag>
+        <listOrderPriority>40</listOrderPriority>
+        <settlementGenerationWeight>1</settlementGenerationWeight>
+        <requiredCountAtGameStart>1</requiredCountAtGameStart>
+        <maxCountAtGameStart>3</maxCountAtGameStart>
+        <canMakeRandomly>true</canMakeRandomly>
+        <canSiege>true</canSiege>
+        <autoFlee>false</autoFlee>
+        <canStageAttacks>true</canStageAttacks>
+        <leaderTitle>指挥官</leaderTitle>
+        <permanentEnemyToEveryoneExceptPlayer>true</permanentEnemyToEveryoneExceptPlayer>
+        <fixedLeaderKinds>
+            <li>UnionCommander</li>
+        </fixedLeaderKinds>
+        <techLevel>Spacer</techLevel>
+        <factionIconPath>FactionImg/Union</factionIconPath>
+        <colorSpectrum>
+            <li>(0.2, 0.4, 0.8)</li>
+            <li>(0.3, 0.5, 0.9)</li>
+            <li>(0.1, 0.3, 0.7)</li>
+        </colorSpectrum>
+        <factionNameMaker>NamerFactionOutlander</factionNameMaker>
+        <settlementNameMaker>NamerSettlementOutlander</settlementNameMaker>
+        <!-- 种族限制：只允许智人种 -->
+        <!-- 注意：FactionDef不支持allowedRaces字段，种族限制通过PawnKindDef的race字段实现 -->
+        <allowedCultures>
+            <li>Astropolitan</li>
+        </allowedCultures>
+        <backstoryFilters>
+            <li>
+                <categories>
+                    <li>Outlander</li>
+                </categories>
+            </li>
+        </backstoryFilters>
+        <caravanTraderKinds>
+            <li>Caravan_Outlander_BulkGoods</li>
+            <li>Caravan_Outlander_CombatSupplier</li>
+        </caravanTraderKinds>
+        <visitorTraderKinds>
+            <li>Visitor_Outlander_Standard</li>
+        </visitorTraderKinds>
+        <baseTraderKinds>
+            <li>Base_Outlander_Standard</li>
+        </baseTraderKinds>
+        <allowedArrivalTemperatureRange>-40~45</allowedArrivalTemperatureRange>
+        <maxPawnCostPerTotalPointsCurve>
+            <points>
+                <li>(0,35)</li>
+                <li>(70, 50)</li>
+                <li>(700, 100)</li>
+                <li>(1300, 150)</li>
+                <li>(100000, 10000)</li>
+            </points>
+        </maxPawnCostPerTotalPointsCurve>
+        <raidLootValueFromPointsCurve>
+            <points>
+                <li>(35, 15)</li>
+                <li>(100, 120)</li>
+                <li>(1000, 500)</li>
+                <li>(2000, 800)</li>
+                <li>(4000, 1000)</li>
+            </points>
+        </raidLootValueFromPointsCurve>
+        <pawnGroupMakers>
+            <!-- 和平贸易团 -->
+            <li>
+                <kindDef>Peaceful</kindDef>
+                <commonality>1</commonality>
+                <options>
+                    <UnionCloneAssault>8</UnionCloneAssault>
+                    <UnionCommander>2</UnionCommander>
+                </options>
+            </li>
+            <!-- 战斗巡逻队 -->
+            <li>
+                <kindDef>Combat</kindDef>
+                <commonality>1</commonality>
+                <options>
+                    <UnionCloneAssault>8</UnionCloneAssault>
+                    <UnionCloneHeavy>2</UnionCloneHeavy>
+                    <UnionCommander>1</UnionCommander>
+                </options>
+            </li>
+            <!-- 定居点守卫 -->
+            <li>
+                <kindDef>Settlement</kindDef>
+                <options>
+                    <UnionCloneAssault>6</UnionCloneAssault>
+                    <UnionCloneHeavy>2</UnionCloneHeavy>
+                    <UnionCommander>2</UnionCommander>
+                </options>
+            </li>
+            <!-- 袭击者 -->
+            <li>
+                <kindDef>Combat</kindDef>
+                <commonality>1</commonality>
+                <maxTotalPoints>10000</maxTotalPoints>
+                <options>
+                    <UnionCloneAssault>8</UnionCloneAssault>
+                    <UnionCloneHeavy>3</UnionCloneHeavy>
+                    <UnionCommander>1</UnionCommander>
+                </options>
+            </li>
+        </pawnGroupMakers>
+        <settlementTexturePath>FactionImg/Union</settlementTexturePath>
+    </FactionDef>
+</Defs> 

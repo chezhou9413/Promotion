@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+	<BackstoryDef>
+		<defName>UnionClone_Cadet</defName>
+		<title>联盟军校克隆人</title>
+		<titleShort>军校生</titleShort>
+		<spawnCategories>
+			<li>Empire</li>
+		</spawnCategories>
+		<slot>Childhood</slot>
+		<baseDesc>这个克隆人从孵化开始就在联盟军校中接受训练，学习基础武器使用、格斗术以及无条件服从。</baseDesc>
+		<bodyTypeMale>Male</bodyTypeMale>
+		<skillGains>
+			<Shooting>3</Shooting>
+			<Melee>2</Melee>
+		</skillGains>
+		<workDisables>
+			<li>Social</li>
+			<li>Artistic</li>
+		</workDisables>
+	</BackstoryDef>
+	<BackstoryDef>
+		<defName>UnionClone_Soldier</defName>
+		<title>联盟克隆人士兵</title>
+		<titleShort>士兵</titleShort>
+		<spawnCategories>
+			<li>Empire</li>
+		</spawnCategories>
+		<slot>Adulthood</slot>
+		<baseDesc>经过十年的严格军事训练，他被投入前线执行各种残酷任务。个人情感被彻底抹除，只剩下对命令的服从。</baseDesc>
+		<skillGains>
+			<Shooting>6</Shooting>
+			<Melee>4</Melee>
+		</skillGains>
+		<workDisables>
+			<li>Social</li>
+			<li>Animals</li>
+			<li>Artistic</li>
+		</workDisables>
+	</BackstoryDef>
+</Defs>

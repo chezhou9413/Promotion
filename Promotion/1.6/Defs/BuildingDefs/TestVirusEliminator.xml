@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ThingDef ParentName="BuildingBase">
+    <defName>TestVirusEliminator</defName>
+    <label>测试病毒消除器</label>
+    <description>一个用于测试的建筑，占地一格，需要电力。</description>
+    <tickerType>Normal</tickerType>
+    <graphicData>
+      <texPath>Things/Building/Misc/TempControl/Heater</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <size>(1,1)</size>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <pathCost>14</pathCost>
+    <fillPercent>0.5</fillPercent>
+    <statBases>
+      <MaxHitPoints>100</MaxHitPoints>
+      <WorkToBuild>800</WorkToBuild>
+      <Mass>5</Mass>
+      <Flammability>0.5</Flammability>
+    </statBases>
+    <costList>
+      <Steel>20</Steel>
+      <ComponentIndustrial>1</ComponentIndustrial>
+    </costList>
+    <building>
+      <canPlaceOverWall>false</canPlaceOverWall>
+    </building>
+    <researchPrerequisites>
+      <li>MicroelectronicsBasics</li>
+    </researchPrerequisites>
+    <designationCategory>Misc</designationCategory>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>100</basePowerConsumption>
+      </li>
+      <li Class="PromotionLib.comp.BuildingStrainClearCompProperties">
+        <!-- 建筑作用的范围 -->
+        <effectRange>5</effectRange>
+        <!-- 是否需要电力支持 此功能为true必须拥有CompProperties_Power组件，不然会报错-->
+        <requiresPower>true</requiresPower>
+        <!-- 是否需要燃料支持 此功能为true必须拥有CompRefuelable组件，不然会报错-->
+        <hasRes>false</hasRes>
+        <!-- 是否禁用空气传播 -->
+        <DisableAirborneTransmission>true</DisableAirborneTransmission>
+        <!-- 是否禁用接触传播 -->
+        <isContactTransmissionEnabled>true</isContactTransmissionEnabled>
+        <!-- 是否禁用体液传播 -->
+        <isFluidTransmissionEnabled>true</isFluidTransmissionEnabled>
+        <!-- 是否对范围内物品进行消毒 -->
+        <DisinfectItemsInRadius>true</DisinfectItemsInRadius>
+        <!-- 是否会被障碍阻挡 -->
+        <IsObstructed>true</IsObstructed>
+      </li>
+    </comps>
+    <!-- 此组件用于在建筑放置中在玩家手上拖动时绘制作用范围,如不想要直接删除placeWorkers即可 -->
+     <placeWorkers>
+      <li>PromotionLib.Place.PlaceWorker_ShowEffectRange</li>
+    </placeWorkers>
+  </ThingDef>
+</Defs>

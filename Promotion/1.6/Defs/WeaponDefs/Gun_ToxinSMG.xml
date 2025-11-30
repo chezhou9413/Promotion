@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- 毒素冲锋枪 - 基于原版重型冲锋枪 -->
+  <ThingDef ParentName="BaseHumanMakeableGun">
+    <defName>Gun_ToxinSMG</defName>
+    <label>毒素冲锋枪</label>
+    <description>一种紧凑型、大口径的毒素发射器。射程很短，但威力强大，操控性能良好。发射带有毒素的子弹。</description>
+    
+    <!-- 武器贴图设置 -->
+    <graphicData>
+      <texPath>weapon/Gun_ToxinSMG</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+    
+    <!-- 武器交互音效 -->    
+    <!-- 武器分类 - 影响AI使用策略 -->
+    <weaponClasses>
+      <li>ShortShots</li>  <!-- 短距离射击 -->
+      <li>RangedHeavy</li> <!-- 重型远程武器 -->
+    </weaponClasses>
+    
+    <!-- 制作配方设置 -->
+    <recipeMaker>
+      <researchPrerequisite>GasOperation</researchPrerequisite> <!-- 前置研究：气体操作 -->
+      <skillRequirements>
+        <Crafting>5</Crafting> <!-- 制作技能要求：5级 -->
+      </skillRequirements>
+      <displayPriority>440</displayPriority> <!-- 显示优先级 -->
+    </recipeMaker>
+    
+    <!-- 奖励标签 -->
+    <thingSetMakerTags><li>RewardStandardQualitySuper</li></thingSetMakerTags>
+    
+    <!-- 武器基础属性 -->
+    <statBases>
+      <WorkToMake>24000</WorkToMake>           <!-- 制作工作量 -->
+      <Mass>3.5</Mass>                         <!-- 重量（kg） -->
+      <AccuracyTouch>0.95</AccuracyTouch>      <!-- 近距离精度 -->
+      <AccuracyShort>0.75</AccuracyShort>      <!-- 短距离精度 -->
+      <AccuracyMedium>0.35</AccuracyMedium>    <!-- 中距离精度 -->
+      <AccuracyLong>0.20</AccuracyLong>        <!-- 远距离精度 -->
+      <RangedWeapon_Cooldown>1.85</RangedWeapon_Cooldown> <!-- 武器冷却时间 -->
+    </statBases>
+    
+    <!-- 制作材料成本 -->
+    <costList>
+      <Steel>75</Steel>                        <!-- 钢铁：75个 -->
+      <ComponentIndustrial>4</ComponentIndustrial> <!-- 工业零件：4个 -->
+    </costList>
+    
+    <!-- 武器动作设置 -->
+    <verbs>
+      <li>
+        <verbClass>Verb_Shoot</verbClass>      <!-- 射击动作类 -->
+        <hasStandardCommand>true</hasStandardCommand> <!-- 有标准命令 -->
+        <defaultProjectile>Bullet_ToxinSMG</defaultProjectile> <!-- 默认子弹 -->
+        <warmupTime>0.9</warmupTime>           <!-- 瞄准时间 -->
+        <range>22.9</range>                    <!-- 射程 -->
+        <burstShotCount>7</burstShotCount>     <!-- 连发数量：7发 -->
+        <ticksBetweenBurstShots>4</ticksBetweenBurstShots> <!-- 连发间隔：4tick ≈ 0.07秒 更快射速 -->
+        <soundCast>Shot_HeavySMG</soundCast>   <!-- 射击音效 -->
+        <soundCastTail>GunTail_Heavy</soundCastTail> <!-- 射击尾音 -->
+        <muzzleFlashScale>9</muzzleFlashScale> <!-- 枪口火焰大小 -->
+      </li>
+    </verbs>
+    
+    <!-- 武器标签 - 用于AI和贸易系统 -->
+    <weaponTags>
+    </weaponTags>
+    
+    <!-- 近战工具设置 - 当作近战武器使用时的属性 -->
+    <tools>
+      <li>
+        <label>握把</label>                    <!-- 攻击部位名称 -->
+        <capacities>
+          <li>Blunt</li>                       <!-- 钝击伤害 -->
+        </capacities>
+        <power>9</power>                       <!-- 攻击力 -->
+        <cooldownTime>2</cooldownTime>         <!-- 攻击冷却时间 -->
+      </li>
+      <li>
+        <label>枪管</label>                    <!-- 攻击部位名称 -->
+        <capacities>
+          <li>Blunt</li>                       <!-- 钝击伤害 -->
+          <li>Poke</li>                        <!-- 刺击伤害 -->
+        </capacities>
+        <power>9</power>                       <!-- 攻击力 -->
+        <cooldownTime>2</cooldownTime>         <!-- 攻击冷却时间 -->
+      </li>
+    </tools>
+  </ThingDef>
+
+  <!-- 毒素冲锋枪子弹 - 基于原版重型冲锋枪子弹 -->
+  <ThingDef ParentName="BaseBullet">
+    <defName>Bullet_ToxinSMG</defName>
+    <label>毒素冲锋枪子弹</label>
+    
+    <!-- 子弹贴图设置 -->
+    <graphicData>
+      <texPath>projectile/armo1</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <!-- 自发光着色器配置 - 完美解决边缘问题 -->
+      <shaderType>TransparentPostLight</shaderType> <!-- 自发光着色器 -->
+      <color>(0.3, 1.0, 0.3)</color> <!-- 毒素绿色着色 -->
+      <drawSize>0.5</drawSize> <!-- 适中的尺寸，避免过度拉伸 -->
+    </graphicData>
+    
+    <!-- 子弹属性设置 -->
+    <projectile>
+      <damageDef>ToxicSMG</damageDef>           <!-- 伤害类型：毒素冲锋枪伤害 -->
+      <damageAmountBase>6</damageAmountBase>    <!-- 基础伤害：6点 -->
+      <speed>37</speed>                         <!-- 子弹速度 -->
+      <armorPenetrationBase>0.15</armorPenetrationBase> <!-- 护甲穿透力 -->
+    </projectile>
+  </ThingDef>
+</Defs> 

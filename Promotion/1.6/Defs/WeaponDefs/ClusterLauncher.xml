@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+    <!-- 集束火箭发射器 - 基于原版末日火箭发射器修改 -->
+    <ThingDef ParentName="BaseGun">
+        <defName>Gun_ClusterLauncher</defName>
+        <label>集束火箭发射器</label>
+        <description>一种重型火箭发射器，发射单枚集束火箭弹。能够对目标区域造成巨大破坏，适合对付密集的敌人群体。\n\n虽然装填时间较长，但强大的破坏力使其成为战场上的重要武器。</description>
+
+        <!-- 游戏机制设置 -->
+        <tickerType>Normal</tickerType>        <!-- 游戏更新频率：Normal表示每帧更新 -->
+        <techLevel>Spacer</techLevel>        <!-- 科技等级：太空时代 -->
+        <smeltable>false</smeltable>        <!-- 不可熔炼：防止被销毁 -->
+
+        <!-- 外观贴图设置 -->
+        <graphicData>
+            <texPath>weapon/ClusterLauncher</texPath>            <!-- 武器贴图路径 -->
+            <graphicClass>Graphic_Single</graphicClass>            <!-- 贴图类型：单张贴图 -->
+            <drawSize>(1.5, 1.5)</drawSize>            <!-- 武器显示大小：1.5倍（比默认大50%） -->
+        </graphicData>
+
+        <!-- 基础属性设置 -->
+        <statBases>
+            <MarketValue>1500</MarketValue>            <!-- 市场价值：1500银 -->
+            <Mass>10</Mass>            <!-- 重量：10kg -->
+            <RangedWeapon_Cooldown>10.0</RangedWeapon_Cooldown>            <!-- 武器冷却时间：10秒 -->
+        </statBases>
+
+        <!-- 武器分类标签 -->
+        <weaponTags>
+            <li>Gun</li>            <!-- 武器标签：枪械类 -->
+        </weaponTags>
+        <weaponClasses>
+            <li>RangedHeavy</li>            <!-- 武器类别：重型远程武器 -->
+        </weaponClasses>
+
+        <!-- 贸易和奖励标签 -->
+        <tradeTags>
+            <li>ExoticMisc</li>            <!-- 贸易标签：异域杂项 -->
+            <li>WeaponRanged</li>            <!-- 贸易标签：远程武器 -->
+        </tradeTags>
+        <thingSetMakerTags>
+            <li>RewardStandardLowFreq</li>            <!-- 奖励标签：标准低频率奖励 -->
+        </thingSetMakerTags>
+        <relicChance>0</relicChance>        <!-- 遗迹概率：0%（不会成为遗迹） -->
+
+        <!-- 武器动作设置 -->
+        <verbs>
+            <li>
+                <verbClass>Verb_Shoot</verbClass>                <!-- 动作类：射击动作 -->
+                <hasStandardCommand>true</hasStandardCommand>                <!-- 有标准命令：显示射击按钮 -->
+                <defaultProjectile>Bullet_ClusterRocket</defaultProjectile>                <!-- 默认子弹：集束火箭弹 -->
+
+                <!-- 射击精度设置 -->
+                <forcedMissRadius>1</forcedMissRadius>                <!-- 强制偏离半径：1.9格（增加随机性） -->
+
+                <!-- 射击准备设置 -->
+                <warmupTime>3.0</warmupTime>                <!-- 瞄准时间：3秒（重型武器需要时间瞄准） -->
+
+                <!-- AI行为设置 -->
+                <ai_AvoidFriendlyFireRadius>8</ai_AvoidFriendlyFireRadius>                <!-- AI避免友军误伤半径：8格 -->
+
+                <!-- 射程设置 -->
+                <range>70.0</range>
+
+                <!-- 射击模式设置 -->
+                <burstShotCount>1</burstShotCount>                <!-- 连发数量：1发（单发重型武器） -->
+
+                <!-- 音效设置 -->
+                <soundCast>InfernoCannon_Fire</soundCast>                <!-- 射击音效：地狱炮开火声 -->
+                <soundCastTail>GunTail_Heavy</soundCastTail>                <!-- 射击尾音：重型武器尾音 -->
+
+                <!-- 使用限制设置 -->
+                <onlyManualCast>true</onlyManualCast>                <!-- 仅手动操作：AI不会自动使用 -->
+                <isMortar>true</isMortar>                <!-- 是迫击炮：可以攻击视线外的目标 -->
+                <requireLineOfSight>false</requireLineOfSight>                <!-- 不需要视线：可以攻击墙后目标 -->
+
+                <!-- 目标参数设置 -->
+                <targetParams>
+                    <canTargetLocations>true</canTargetLocations>                    <!-- 可以攻击位置：支持区域攻击 -->
+                </targetParams>
+
+                <!-- 视觉效果设置 -->
+                <muzzleFlashScale>16</muzzleFlashScale>                <!-- 枪口火焰大小：16倍（重型武器的大火焰） -->
+            </li>
+        </verbs>
+
+        <!-- 近战武器设置（当被用作近战武器时） -->
+        <tools>
+            <li>
+                <label>barrel</label>                <!-- 攻击部位名称：枪管 -->
+                <capacities>
+                    <li>Blunt</li>                    <!-- 伤害类型：钝击伤害 -->
+                </capacities>
+                <power>15.0</power>                <!-- 攻击力：15点 -->
+                <cooldownTime>3.5</cooldownTime>                <!-- 攻击冷却时间：3.5秒 -->
+            </li>
+        </tools>
+
+        <!-- 组件设置 -->
+        <comps>
+            <li Class="CompProperties_Explosive">
+                <explosiveRadius>12.0</explosiveRadius>                <!-- 爆炸半径：8格（武器本身的爆炸范围） -->
+                <explosiveDamageType>Bomb</explosiveDamageType>                <!-- 爆炸伤害类型：炸弹伤害 -->
+                <requiredDamageTypeToExplode>Flame</requiredDamageTypeToExplode>                <!-- 引爆所需伤害类型：火焰 -->
+            </li>
+            <li Class="CompProperties_Biocodable"/>
+            <!-- 生物编码组件：可以绑定到特定殖民者 -->
+        </comps>
+    </ThingDef>
+
+    <!-- 集束火箭弹 - 主弹体 -->
+    <ThingDef ParentName="BaseBullet">
+        <defName>Bullet_ClusterRocket</defName>
+        <label>集束火箭弹</label>
+
+        <!-- 弹体外观设置 -->
+        <graphicData>
+            <texPath>projectile/ClusterArmo</texPath>            <!-- 弹体贴图路径 -->
+            <graphicClass>Graphic_Single</graphicClass>            <!-- 贴图类型：单张贴图 -->
+            <shaderType>TransparentPostLight</shaderType>            <!-- 着色器：透明后发光（发光效果） -->
+        </graphicData>
+
+        <!-- 自定义C#类 -->
+        <thingClass>PromotionLib.Projectile.Bullet_ClusterRocket</thingClass>
+
+        <!-- 弹体属性设置 -->
+        <projectile>
+            <damageDef>Bomb</damageDef>            <!-- 伤害类型：炸弹伤害 -->
+            <flyOverhead>true</flyOverhead>            <!-- 高空飞行：不会被墙/掩体拦截 -->
+            <explosionRadius>7.0</explosionRadius>            <!-- 爆炸半径：5格 -->
+            <speed>55</speed>            <!-- 飞行速度：55（中等速度） -->
+            <damageAmountBase>120</damageAmountBase>            <!-- 基础伤害：120点（高伤害） -->
+            <armorPenetrationBase>0.8</armorPenetrationBase>            <!-- 护甲穿透：80%（高穿透力） -->
+        </projectile>
+        <modExtensions>
+            <li Class="PromotionLib.Projectile.Bullet_ClusterRocketExt">
+                <!-- 圈数 -->
+                <RingCount>5</RingCount>
+                <!-- 每圈发射数；不写则退回代码内的 PerRingDefaultCount -->
+                <PerRingCounts>
+                    <li>6</li>
+                    <li>12</li>
+                    <li>18</li>
+                    <li>24</li>
+                    <li>30</li>
+                </PerRingCounts>
+                <!-- 子抛射体 def 名（要与上面定义一致） -->
+                <clusterBulletDefName>Bullet_ClusterBullet</clusterBulletDefName>
+                <!-- 半径：首圈半径 + 每圈递增 -->
+                <FirstRingRadius>3.0</FirstRingRadius>
+                <RingSpacing>8.0</RingSpacing>
+            </li>
+        </modExtensions>
+    </ThingDef>
+
+    <!-- 子弹头抛射体 - 集束弹的子弹 -->
+    <ThingDef ParentName="BaseBullet">
+        <defName>Bullet_ClusterBullet</defName>
+        <label>子弹头</label>
+
+        <!-- 子弹头外观设置 -->
+        <graphicData>
+            <texPath>projectile/ClusterArmo</texPath>            <!-- 子弹头贴图路径 -->
+            <graphicClass>Graphic_Single</graphicClass>            <!-- 贴图类型：单张贴图 -->
+            <shaderType>TransparentPostLight</shaderType>            <!-- 着色器：透明后发光 -->
+            <drawSize>(0.2, 0.2)</drawSize>            <!-- 绘制大小：0.6x0.6（比主弹体小） -->
+        </graphicData>
+
+        <!-- 自定义C#类 -->
+        <thingClass>PromotionLib.Projectile.Bullet_ClusterBullet</thingClass>
+
+        <!-- 子弹头属性设置 -->
+        <projectile>
+            <damageDef>Bomb</damageDef>            <!-- 伤害类型：炸弹伤害 -->
+
+            <!-- 伤害设置 -->
+            <damageAmountBase>70</damageAmountBase>            <!-- 基础伤害：70点（中等伤害） -->
+            <armorPenetrationBase>0.7</armorPenetrationBase>            <!-- 护甲穿透：70%（中等穿透力） -->
+
+            <!-- 爆炸设置 -->
+            <explosionRadius>3</explosionRadius>            <!-- 爆炸半径：2.2格（小范围爆炸） -->
+
+            <!-- 飞行设置 -->
+            <speed>50</speed>            <!-- 飞行速度：20（慢速，便于观察） -->
+            <flyOverhead>false</flyOverhead>            <!-- 不高空飞行：便于观察落点爆炸 -->
+
+            <!-- 音效设置 -->
+            <soundExplode>Explosion_Bomb</soundExplode>            <!-- 爆炸音效：炸弹爆炸声 -->
+        </projectile>
+    </ThingDef>
+
+</Defs>

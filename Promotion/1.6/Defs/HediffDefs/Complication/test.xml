@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+    <!-- 通用并发症 -->
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_Fatigue</defName>
+        <label>持续疲劳</label>
+        <description>患者持续感到虚弱和疲乏，体力恢复缓慢。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+        <stages>
+            <li>
+                <statFactors>
+                    <MoveSpeed>0.9</MoveSpeed>
+                    <RestRateMultiplier>0.8</RestRateMultiplier>
+                </statFactors>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>GenericComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>                <!-- 每次治疗有效12小时 -->
+                <severityPerDayTended>-0.5</severityPerDayTended>                <!-- 降低速度加快：2天痊愈 -->
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>                <!-- 治一次就差不多痊愈 -->
+                <showTendQuality>true</showTendQuality>               <!-- 隐藏治疗质量（可选） -->
+            </li>
+        </comps>
+    </HediffDef>
+
+    <!-- 标志性并发症 -->
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_SkinRash</defName>
+        <label>皮疹</label>
+        <description>皮肤表面出现红色斑点，伴随瘙痒和轻微炎症。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+        <stages>
+            <li>
+                <painOffset>0.1</painOffset>
+                <statFactors>
+                    <ComfyTemperatureMin>0.9</ComfyTemperatureMin>
+                    <RestRateMultiplier>0.9</RestRateMultiplier>
+                </statFactors>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>SignatureComplication</type>
+                <scope>BodyPart</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>                <!-- 每次治疗有效12小时 -->
+                <severityPerDayTended>-0.5</severityPerDayTended>                <!-- 降低速度加快：2天痊愈 -->
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>                <!-- 治一次就差不多痊愈 -->
+                <showTendQuality>true</showTendQuality>                   <!-- 隐藏治疗质量（可选） -->
+            </li>
+        </comps>
+    </HediffDef>
+
+    <!-- 神经并发症 -->
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_CognitiveDecline</defName>
+        <label>认知下降</label>
+        <description>神经系统受损导致反应迟缓与判断力下降。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+        <stages>
+            <li>
+                <capMods>
+                    <li>
+                        <capacity>Talking</capacity>
+                        <offset>-0.3</offset>
+                    </li>
+                    <li>
+                        <capacity>Consciousness</capacity>
+                        <offset>-0.15</offset>
+                    </li>
+                </capMods>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>NeuroSignatureComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>2</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>                <!-- 每次治疗有效12小时 -->
+                <severityPerDayTended>-0.5</severityPerDayTended>                <!-- 降低速度加快：2天痊愈 -->
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>                <!-- 治一次就差不多痊愈 -->
+                <showTendQuality>true</showTendQuality>                    <!-- 隐藏治疗质量（可选） -->
+            </li>
+        </comps>
+    </HediffDef>
+
+    <!-- 技能能力并发症 -->
+    <HediffDef>
+        <defName>RimBio_Complication_ReflexBoost</defName>
+        <label>反射增强</label>
+        <description>一种异常但短暂的神经提升状态，反应速度提高。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <stages>
+            <li>
+                <statFactors>
+                    <AimingDelayFactor>0.7</AimingDelayFactor>
+                    <ShootingAccuracyPawn>1.15</ShootingAccuracyPawn>
+                </statFactors>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>AbilityComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+        </comps>
+    </HediffDef>
+
+    <!-- 升华进化并发症 -->
+    <!-- 在 <Defs> 根节点下 -->
+    <HediffDef>
+        <defName>RimBio_Complication_BodyReinforcement</defName>
+        <label>身体强化</label>
+        <description>由病毒引发的并发症，使身体性能显著提升，同时抑制疼痛。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+
+        <!-- 角色处于第 1 阶段（最高等级）时获得以下所有加成 -->
+        <stages>
+            <li>
+                <!-- 10% 原始疼痛 → 实际疼痛留存为 10% -->
+                <painFactor>0.1</painFactor>
+
+                <capMods>
+                    <li>
+                        <capacity>Moving</capacity>
+                        <offset>5.0</offset>                        <!-- +500% 移动能力 -->
+                    </li>
+                    <li>
+                        <capacity>Manipulation</capacity>
+                        <offset>0.1</offset>                        <!-- +10% 操作能力 -->
+                    </li>
+                </capMods>
+
+                <statOffsets>
+                    <ArmorRating_Sharp>100</ArmorRating_Sharp>                    <!-- +100）锐器护甲 -->
+                    <ArmorRating_Blunt>100</ArmorRating_Blunt>                    <!-- +100）钝器护甲 -->
+                    <ArmorRating_Heat>100</ArmorRating_Heat>                    <!-- +100）热伤害护甲 -->
+                    <!-- 疼痛倒地的扳机由 80% 提升至 90% -->
+                    <PainShockThreshold>0.9</PainShockThreshold>
+                </statOffsets>
+
+                <statFactors>
+                    <!-- 近战伤害 ×5，注意：Pawn 的 stat 是 "Melee Damage Factor" -->
+                    <MeleeDamageFactor>5.0</MeleeDamageFactor>
+                </statFactors>
+            </li>
+        </stages>
+
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>EvolutionComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>3</severityLevel>
+            </li>
+        </comps>
+    </HediffDef>
+
+</Defs>

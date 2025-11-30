@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- 治疗剂亢奋效果 -->
+  <HediffDef>
+    <defName>HealingStimulant</defName>
+    <label>治疗剂亢奋</label>
+    <description>治疗剂引起的亢奋状态，提供临时的身体增强效果。这种状态会完全消除疼痛，显著提升意识水平，并提供临时的身体机能提升。效果会在30秒后自动消失。</description>
+    
+    <!-- 基础设置 -->
+    <hediffClass>HediffWithComps</hediffClass>
+    <defaultLabelColor>(0.2, 0.8, 0.2)</defaultLabelColor>  <!-- 绿色 -->
+    <isBad>false</isBad>  <!-- 不是负面效果 -->
+    <everCurableByItem>false</everCurableByItem>  <!-- 不可通过物品治愈 -->
+    <lethalSeverity>-1</lethalSeverity>  <!-- 不会致死 -->
+    <maxSeverity>1.0</maxSeverity>  <!-- 最大严重程度 -->
+    <initialSeverity>1.0</initialSeverity>  <!-- 初始严重程度 -->
+    
+    <!-- 持续时间设置 -->
+    <comps>
+      <li Class="HediffCompProperties_SeverityPerDay">
+        <severityPerDay>-2.0</severityPerDay>  <!-- 每天减少2.0严重程度 -->
+      </li>
+      <li Class="HediffCompProperties_Disappears">
+        <disappearsAfterTicks>1800</disappearsAfterTicks>  <!-- 30秒 = 1800tick -->
+        <showRemainingTime>false</showRemainingTime>
+      </li>
+    </comps>
+    
+    <!-- 视觉效果和效果设置 -->
+    <stages>
+      <li>
+        <becomeVisible>true</becomeVisible>
+        <label>治疗剂亢奋</label>
+        <painFactor>0.0</painFactor>  <!-- 疼痛完全消除 -->
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>0.2</offset>  <!-- 意识提升20% -->
+          </li>
+        </capMods>
+      </li>
+    </stages>
+    
+    <!-- 标签设置 -->
+    <tags>
+      <li>Medical</li>
+      <li>Stimulant</li>
+      <li>Temporary</li>
+      <li>PainRelief</li>
+      <li>ConsciousnessBoost</li>
+    </tags>
+    
+  </HediffDef>
+
+</Defs> 

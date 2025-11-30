@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+    <name>升变 - PromotionLib</name>
+    <author>PromotionLib</author>
+    <packageId>PromotionLib.Core</packageId>
+    <description>升变 - 在环世界的边缘地带探索生化科技的奥秘 这个模组带来了先进的生化科技系统，让你的殖民地能够研发和使用各种生化武器、防护装备和相关技术。 核心特色： • 生化武器系统：研发各种生化弹药和武器，对敌人造成持续的生化伤害 • 防护科技：制造专业的防化装备，保护殖民者免受生化威胁 • 生化研究：建立实验室，研究生化技术和毒素提取工艺 • 环境污染：生化武器会对环境造成持久影响，需要谨慎使用 • 生化种族：与拥有生化抗性的特殊种族进行交流或战斗 注意：生化武器威力巨大但使用需谨慎，过度使用可能对环境和生态造成不可逆转的影响。 适合喜欢科技发展和战术策略的玩家。</description>
+    <supportedVersions>
+        <li>1.6</li>
+    </supportedVersions>
+    <modDependencies></modDependencies>
+    <loadAfter>
+        <li>Ludeon.RimWorld</li>
+        <li>Ludeon.RimWorld.Royalty</li>
+        <li>Ludeon.RimWorld.Ideology</li>
+        <li>Ludeon.RimWorld.Biotech</li>
+        <li>erdelf.HumanoidAlienRaces</li>
+    </loadAfter>
+</ModMetaData> 

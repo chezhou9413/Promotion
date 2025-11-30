@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 新人类服装分类定义 -->
+    <ThingCategoryDef>
+        <defName>newHuman_Apparel</defName>
+        <label>新人类服装</label>
+        <parent>Apparel</parent>
+    </ThingCategoryDef>
+    
+    <ThingCategoryDef>
+        <defName>newHuman_Apparel_OnSkin</defName>
+        <label>新人类内层服装</label>
+        <parent>newHuman_Apparel</parent>
+    </ThingCategoryDef>
+    
+    <ThingCategoryDef>
+        <defName>newHuman_Apparel_Middle</defName>
+        <label>新人类中层服装</label>
+        <parent>newHuman_Apparel</parent>
+    </ThingCategoryDef>
+    
+    <ThingCategoryDef>
+        <defName>newHuman_Apparel_Shell</defName>
+        <label>新人类外层服装</label>
+        <parent>newHuman_Apparel</parent>
+    </ThingCategoryDef>
+</Defs>

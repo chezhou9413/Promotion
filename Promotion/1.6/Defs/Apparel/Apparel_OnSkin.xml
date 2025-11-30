@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 新人类内层服装基础抽象类 -->
+    <ThingDef Name="newHuman_OnSkinBase" ParentName="newHuman_ApparelBase" Abstract="True">
+        <!-- 基础属性：质量、装备延迟 -->
+        <statBases>
+            <Mass>0.8</Mass>
+            <EquipDelay>1.6</EquipDelay>
+        </statBases>
+
+        <!-- 服装属性：内层、标签、分类 -->
+        <apparel>
+            <layers>
+                <li>OnSkin</li>
+            </layers>
+            <tags>
+                <li>newHuman_OnSkin</li>
+            </tags>
+        </apparel>
+
+        <thingCategories>
+            <li>newHuman_Apparel_OnSkin</li>
+        </thingCategories>
+    </ThingDef>
+
+    <!-- 新人类基础内衬 -->
+    <ThingDef Name="newHuman_Lining" ParentName="newHuman_OnSkinBase">
+        <defName>newHuman_Lining</defName>
+        <label>新人类内衬</label>
+        <description>新人类专用内衬。一种贴合身形的柔软内层服装，为新人类提供基础保护和舒适性。</description>
+
+        <!-- 制作成本：需要35个材料 -->
+        <costStuffCount>35</costStuffCount>
+        <stuffCategories>
+            <li>Leathery</li>
+            <li>Fabric</li>
+        </stuffCategories>
+
+        <!-- 图形数据：贴图路径 -->
+        <graphicData>
+            <texPath>Item/OnSkin/GeneNarrativeResearchSuit</texPath>
+        </graphicData>
+
+        <!-- 基础属性：最大生命值、制作工作量、护甲评级、材料效果倍数 -->
+        <statBases>
+            <MaxHitPoints>100</MaxHitPoints>
+            <WorkToMake>3200</WorkToMake>
+            <ArmorRating_Sharp>0.0</ArmorRating_Sharp>
+            <ArmorRating_Blunt>0.2</ArmorRating_Blunt>
+            <ArmorRating_Heat>0.3</ArmorRating_Heat>
+            <StuffEffectMultiplierArmor>0.2</StuffEffectMultiplierArmor>
+            <StuffEffectMultiplierInsulation_Cold>0</StuffEffectMultiplierInsulation_Cold>
+            <StuffEffectMultiplierInsulation_Heat>0</StuffEffectMultiplierInsulation_Heat>
+        </statBases>
+
+        <!-- 服装属性：发育阶段过滤、身体部位组、穿着图形路径、标签 -->
+        <apparel>
+            <developmentalStageFilter>Child, Adult</developmentalStageFilter>
+            <bodyPartGroups>
+                <li>Torso</li>
+            </bodyPartGroups>
+            <wornGraphicPath>AlienRace/newHuman/Apparel/OnSkin/Lining/Lining</wornGraphicPath>
+            <tags>
+                <li>newHuman_Lining</li>
+                <li>newHuman_Base</li>
+            </tags>
+        </apparel>
+
+        <!-- 制作配方：研究前提条件 -->
+        <recipeMaker>
+            <researchPrerequisites>
+                <li>ComplexClothing</li>
+            </researchPrerequisites>
+        </recipeMaker>
+
+        <!-- 装备时的属性偏移 -->
+        <equippedStatOffsets></equippedStatOffsets>
+    </ThingDef>
+</Defs>

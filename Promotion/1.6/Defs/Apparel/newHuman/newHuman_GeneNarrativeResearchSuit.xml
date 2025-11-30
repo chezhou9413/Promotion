@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 基因叙事高级研究服 -->
+    <ThingDef Name="newHuman_GeneNarrativeResearchSuit" ParentName="newHuman_OnSkinBase">
+        <defName>newHuman_GeneNarrativeResearchSuit</defName>
+        <label>基因叙事高级研究服</label>
+        <description>新人类专用的高级研究服装。采用先进的生物技术材料制作，能够增强研究效率和基因分析能力。这套服装融合了基因叙事技术，为研究人员提供卓越的科研支持。</description>
+        
+        <!-- 制作成本：使用固定材料成本 -->
+        <costList>
+            <Steel>30</Steel>
+            <ComponentIndustrial>2</ComponentIndustrial>
+        </costList>
+        
+        <!-- 图形数据：贴图路径 -->
+        <graphicData>
+            <texPath>Item/OnSkin/GeneNarrativeResearchSuit</texPath>
+            <graphicClass>Graphic_Single</graphicClass>
+            <color>(1,1,1,1)</color>
+        </graphicData>
+        
+        <!-- 基础属性：最大生命值、制作工作量、护甲评级、材料效果倍数 -->
+        <statBases>
+            <MaxHitPoints>150</MaxHitPoints>
+            <WorkToMake>4800</WorkToMake>
+            <ArmorRating_Sharp>0.1</ArmorRating_Sharp>
+            <ArmorRating_Blunt>0.3</ArmorRating_Blunt>
+            <ArmorRating_Heat>0.4</ArmorRating_Heat>
+            <!-- 禁用材料效果：移除 StuffEffectMultiplier -->
+        </statBases>
+        
+        <!-- 服装属性：发育阶段过滤、身体部位组、穿着图形路径、标签 -->
+        <apparel>
+            <developmentalStageFilter>Adult</developmentalStageFilter>
+            <bodyPartGroups>
+                <li>Torso</li>
+            </bodyPartGroups>
+            <wornGraphicPath>Item/OnSkin/GeneNarrativeResearchSuit</wornGraphicPath>
+            <tags>
+                <li>newHuman_GeneNarrativeResearchSuit</li>
+                <li>newHuman_Research</li>
+                <li>newHuman_Advanced</li>
+            </tags>
+        </apparel>
+        
+        <!-- 制作配方：研究前提条件 -->
+        <recipeMaker>
+            <researchPrerequisites>
+                <li>ComplexClothing</li>
+                <li>MicroelectronicsBasics</li>
+            </researchPrerequisites>
+        </recipeMaker>
+        
+        <!-- 装备时的属性偏移：增强研究相关能力 -->
+        <equippedStatOffsets>
+            <ResearchSpeed>0.15</ResearchSpeed>
+            <GlobalLearningFactor>0.1</GlobalLearningFactor>
+            <MedicalTendSpeed>0.1</MedicalTendSpeed>
+            <MedicalOperationSpeed>0.1</MedicalOperationSpeed>
+        </equippedStatOffsets>
+        
+        <!-- 特殊效果：基因叙事技术加成 -->
+        <!-- 注意：移除了不存在的 CompProperties_Quality 组件 -->
+        
+        <!-- 禁用染色功能 -->
+        <comps>
+            <li Class="CompProperties_Forbiddable"/>
+        </comps>
+        
+        <!-- 禁用熔炼功能 -->
+        <smeltable>false</smeltable>
+        
+        <!-- 强制使用原始颜色，禁用染色 -->
+        <colorGenerator Class="ColorGenerator_Single">
+            <color>(1,1,1,1)</color>
+        </colorGenerator>
+    </ThingDef>
+</Defs>

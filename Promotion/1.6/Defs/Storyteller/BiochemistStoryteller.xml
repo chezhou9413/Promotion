@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- 自定义叙事者：生化学者（基于原版BaseStoryteller，参数略偏向稳定推进） -->
+  <StorytellerDef ParentName="BaseStoryteller">
+    <!-- 唯一定义名，注意不要与其他模组冲突 -->
+    <defName>RimBio_Biochemist</defName>
+    <label>安蒂娅</label>
+    <description>企业边缘分部生物信息主管</description>
+    <portraitLarge>Story/Story1_body</portraitLarge>
+    <portraitTiny>Story/Story1</portraitTiny>
+    <!-- 列表排序（介于Cassandra 20与Phoebe 30之间） -->
+    <listOrder>25</listOrder>
+
+    <!-- 组件配置：参考Cassandra并略作调整，确保无DLC硬依赖（带MayRequire的分支使用enable/disable控制） -->
+    <comps>
+      <!-- 新手/开局节奏引导 -->
+      <li Class="StorytellerCompProperties_ClassicIntro"/>
+
+      <!-- 基地大型威胁：较温和的开局与间隔 -->
+      <li Class="StorytellerCompProperties_OnOffCycle">
+        <category>ThreatBig</category>
+        <minDaysPassed>10.0</minDaysPassed>
+        <onDays>4.5</onDays>
+        <offDays>6.5</offDays>
+        <minSpacingDays>2.0</minSpacingDays>
+        <numIncidentsRange>1~2</numIncidentsRange>
+        <forceRaidEnemyBeforeDaysPassed>20</forceRaidEnemyBeforeDaysPassed>
+        <disallowedTargetTags>
+          <li>Map_RaidBeacon</li>
+        </disallowedTargetTags>
+      </li>
+
+      <!-- 矿灯信标特殊威胁发生器（突袭类） -->
+      <li Class="StorytellerCompProperties_ThreatsGenerator">
+        <allowedTargetTags>
+          <li>Map_RaidBeacon</li>
+        </allowedTargetTags>
+        <parms>
+          <allowedThreats>Raids</allowedThreats>
+          <onDays>1.0</onDays>
+          <offDays>0.5</offDays>
+          <minSpacingDays>0.05</minSpacingDays>
+          <numIncidentsRange>1~2</numIncidentsRange>
+          <minThreatPoints>500</minThreatPoints>
+        </parms>
+      </li>
+
+      <!-- 基地小型威胁：随时间穿插，随威胁点降低接受率 -->
+      <li Class="StorytellerCompProperties_OnOffCycle">
+        <category>ThreatSmall</category>
+        <minDaysPassed>10.0</minDaysPassed>
+        <onDays>4.5</onDays>
+        <offDays>6.5</offDays>
+        <numIncidentsRange>0.2~1</numIncidentsRange>
+        <acceptPercentFactorPerThreatPointsCurve>
+          <points>
+            <li>(800, 1)</li>
+            <li>(2800, 0)</li>
+          </points>
+        </acceptPercentFactorPerThreatPointsCurve>
+      </li>
+
+      <!-- 基地杂项事件（正负向混合） -->
+      <li Class="StorytellerCompProperties_CategoryMTB">
+        <category>Misc</category>
+        <allowedTargetTags>
+          <li>Map_PlayerHome</li>
+        </allowedTargetTags>
+        <minDaysPassed>5</minDaysPassed>
+        <mtbDays>5.0</mtbDays>
+      </li>
+
+      <!-- 飞船残骸坠落 -->
+      <li Class="StorytellerCompProperties_ShipChunkDrop"/>
+
+      <!-- 疾病事件（人/动物），略提前介入医疗循环 -->
+      <li Class="StorytellerCompProperties_Disease">
+        <category>DiseaseHuman</category>
+        <minDaysPassed>8</minDaysPassed>
+      </li>
+      <li Class="StorytellerCompProperties_Disease">
+        <category>DiseaseAnimal</category>
+        <minDaysPassed>8</minDaysPassed>
+      </li>
+
+      <!-- 友军与中立互动（商队、访客等） -->
+      <li Class="StorytellerCompProperties_FactionInteraction">
+        <incident>RaidFriendly</incident>
+        <baseIncidentsPerYear>12</baseIncidentsPerYear>
+        <minSpacingDays>0.5</minSpacingDays>
+        <fullAlliesOnly>true</fullAlliesOnly>
+        <minDanger>High</minDanger>
+      </li>
+      <li Class="StorytellerCompProperties_FactionInteraction">
+        <incident>TraderCaravanArrival</incident>
+        <minDaysPassed>5</minDaysPassed>
+        <baseIncidentsPerYear>5</baseIncidentsPerYear>
+        <minSpacingDays>6</minSpacingDays>
+        <allowedTargetTags>
+          <li>Map_PlayerHome</li>
+        </allowedTargetTags>
+      </li>
+      <li Class="StorytellerCompProperties_FactionInteraction">
+        <incident>VisitorGroup</incident>
+        <minDaysPassed>3</minDaysPassed>
+        <baseIncidentsPerYear>4</baseIncidentsPerYear>
+        <minSpacingDays>5</minSpacingDays>
+        <allowedTargetTags>
+          <li>Map_PlayerHome</li>
+        </allowedTargetTags>
+      </li>
+      <li Class="StorytellerCompProperties_FactionInteraction">
+        <incident>TravelerGroup</incident>
+        <minDaysPassed>1</minDaysPassed>
+        <baseIncidentsPerYear>6</baseIncidentsPerYear>
+        <minSpacingDays>1</minSpacingDays>
+        <allowedTargetTags>
+          <li>Map_PlayerHome</li>
+        </allowedTargetTags>
+      </li>
+
+      <!-- 世界与商队地图事件（按生物群落独立MTB） -->
+      <li Class="StorytellerCompProperties_CategoryIndividualMTBByBiome">
+        <category>Misc</category>
+        <allowedTargetTags>
+          <li>Caravan</li>
+          <li>Map_TempIncident</li>
+        </allowedTargetTags>
+      </li>
+      <li Class="StorytellerCompProperties_CategoryIndividualMTBByBiome">
+        <category>ThreatSmall</category>
+        <applyCaravanVisibility>true</applyCaravanVisibility>
+        <allowedTargetTags>
+          <li>Caravan</li>
+          <li>Map_TempIncident</li>
+        </allowedTargetTags>
+      </li>
+      <li Class="StorytellerCompProperties_CategoryIndividualMTBByBiome">
+        <category>ThreatBig</category>
+        <applyCaravanVisibility>true</applyCaravanVisibility>
+        <allowedTargetTags>
+          <li>Caravan</li>
+          <li>Map_TempIncident</li>
+        </allowedTargetTags>
+      </li>
+
+      <!-- 任务（无皇家/DLC硬依赖） -->
+      <li Class="StorytellerCompProperties_RandomQuest">
+        <category>GiveQuest</category>
+        <allowedTargetTags>
+          <li>World</li>
+        </allowedTargetTags>
+        <onDays>11</onDays>
+        <numIncidentsRange>1</numIncidentsRange>
+        <acceptFractionByDaysPassedCurve>
+          <points>
+            <li>(8, 0)</li>
+            <li>(15, 1)</li>
+          </points>
+        </acceptFractionByDaysPassedCurve>
+        <minSpacingDays>3</minSpacingDays>
+        <disableIfAnyModActive>
+          <li>Ludeon.RimWorld.Royalty</li>
+        </disableIfAnyModActive>
+      </li>
+      <li Class="StorytellerCompProperties_RandomQuest">
+        <category>GiveQuest</category>
+        <allowedTargetTags>
+          <li>World</li>
+        </allowedTargetTags>
+        <onDays>13</onDays>
+        <numIncidentsRange>1~2</numIncidentsRange>
+        <acceptFractionByDaysPassedCurve>
+          <points>
+            <li>(8, 0)</li>
+            <li>(15, 1)</li>
+          </points>
+        </acceptFractionByDaysPassedCurve>
+        <minSpacingDays>3</minSpacingDays>
+        <enableIfAnyModActive>
+          <li>Ludeon.RimWorld.Royalty</li>
+        </enableIfAnyModActive>
+      </li>
+
+      <!-- 世界杂项事件（轨道访客等） -->
+      <li Class="StorytellerCompProperties_CategoryMTB">
+        <category>Misc</category>
+        <allowedTargetTags>
+          <li>World</li>
+        </allowedTargetTags>
+        <minDaysPassed>12</minDaysPassed>
+        <mtbDays>15</mtbDays>
+      </li>
+
+      <!-- 轨道贸易 -->
+      <li Class="StorytellerCompProperties_OnOffCycle">
+        <incident>OrbitalTraderArrival</incident>
+        <onDays>7</onDays>
+        <offDays>8</offDays>
+        <numIncidentsRange>1</numIncidentsRange>
+      </li>
+
+      <!-- 触发类：黑衣人加入（彩蛋） -->
+      <li Class="StorytellerCompProperties_Triggered">
+        <incident>StrangerInBlackJoin</incident>
+        <delayTicks>180</delayTicks>
+      </li>
+    </comps>
+  </StorytellerDef>
+</Defs>
+
+

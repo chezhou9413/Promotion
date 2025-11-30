@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- 
+    Damage_ToxicSniperRifle.xml - 毒素狙击步枪伤害定义文件
+    定义了毒素狙击步枪的伤害类型，毒性效果最强，适合高伤害单发武器
+-->
+<Defs>
+  <!-- 毒素狙击步枪伤害 - 基于标准子弹但添加极强毒性效果 -->
+  <DamageDef ParentName="Bullet">
+    <!-- 唯一标识符 -->
+    <defName>ToxicSniperRifle</defName>
+    
+    <!-- 伤害标签 -->
+    <label>毒素狙击步枪子弹</label>
+    
+    <!-- 死亡消息 -->
+    <deathMessage>{0} 被毒素狙击步枪射杀。</deathMessage>
+    
+    <!-- 额外的Hediff效果 - 造成极强的毒性堆积 -->
+    <additionalHediffs>
+      <li>
+        <hediff>ToxicBuildup</hediff>
+        <!-- 每点伤害增加的毒性堆积严重程度 - 狙击步枪极强毒性 -->
+        <severityPerDamageDealt>0.035</severityPerDamageDealt>
+        <!-- 根据目标的毒性抗性调整 -->
+        <victimSeverityScaling>ToxicResistance</victimSeverityScaling>
+        <!-- 使用反向缩放（抗性越高，效果越小） -->
+        <inverseStatScaling>true</inverseStatScaling>
+        <!-- 根据体型反向缩放（体型越大，效果越小） -->
+        <victimSeverityScalingByInvBodySize>true</victimSeverityScalingByInvBodySize>
+      </li>
+    </additionalHediffs>
+    
+    <!-- 不对狩猎食物时应用毒性效果 -->
+    <applyAdditionalHediffsIfHuntingForFood>false</applyAdditionalHediffsIfHuntingForFood>
+    
+    <!-- 使用毒性撞击音效 -->
+    <impactSoundType>Toxic</impactSoundType>
+    
+    <!-- 使用毒性撞击特效 -->
+    <damageEffecter>Impact_Toxic</damageEffecter>
+  </DamageDef>
+</Defs> 

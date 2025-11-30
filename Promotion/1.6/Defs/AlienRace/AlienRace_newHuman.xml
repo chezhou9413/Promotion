@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 新人类：基于 HAR 的外星人种族定义入口 -->
+    <AlienRace.ThingDef_AlienRace ParentName="BasePawn">
+        <defName>newHuman</defName>
+        <label>新人类</label>
+        <description>新的人类分支：仅女性体型，使用自定义头部与贴图路径的演示配置。</description>
+        <alienRace>
+            <!-- HAR 主体配置块：包含限制、风格、通用参数与贴图等 -->
+            <!-- 种族限制：禁用基因与内在类别，以及专属服装清单 -->
+            <raceRestriction>
+                <onlyUseRaceRestrictedApparel>true</onlyUseRaceRestrictedApparel>
+                <blackGeneTags>
+                    <li>EyeColor</li>
+                    <li>HairStyle</li>
+                    <li>BeardStyle</li>
+                    <li>SkinColorOverride</li>
+                    <li>Tail</li>
+                    <li>BodyType</li>
+                    <li>Ears</li>
+                </blackGeneTags>
+                <blackEndoCategories>
+                    <li>Melanin</li>
+                    <li>HairColor</li>
+                    <li>BodyType</li>
+                    <li>Headbone</li>
+                    <li>Head</li>
+                    <li>Ears</li>
+                    <li>Nose</li>
+                    <li>Jaw</li>
+                    <li>Voice</li>
+                </blackEndoCategories>
+                <!-- 仅限本种族可穿戴的服装清单 -->
+                <apparelList>
+                    <li>newHuman_GeneNarrativeResearchSuit</li>
+                    <li>newHuman_MaidUniform</li>
+                    <li>newHuman_MaidHeadgear</li>
+                </apparelList>
+            </raceRestriction>
+
+            <!-- 风格设置：限制可用的发型/胡须/纹身风格标签 -->
+            <styleSettings>                <!-- 风格设置块起始：指定发型/胡须/纹身等风格可用性与分类限制 -->
+                <li>                    <!-- 条目：发型规则 -->
+                    <key>HairDef</key>                    <!-- 目标类型：发型定义 -->
+                    <value>                        <!-- 具体规则值开始 -->
+                        <hasStyle>true</hasStyle>                        <!-- 启用风格：该种族使用发型系统 -->
+                        <styleTagsOverride>                            <!-- 覆盖可用风格标签，仅允许下列标签 -->
+                            <li>newHuman_Category</li>
+                        </styleTagsOverride>
+                    </value>                    <!-- 具体规则值结束 -->
+                </li>                <!-- 发型规则结束 -->
+                <li>                    <!-- 条目：胡须规则 -->
+                    <key>BeardDef</key>                    <!-- 目标类型：胡须定义 -->
+                    <value>                        <!-- 具体规则值开始 -->
+                        <hasStyle>false</hasStyle>                        <!-- 关闭风格：不使用任何胡须样式 -->
+                    </value>                    <!-- 具体规则值结束 -->
+                </li>                <!-- 胡须规则结束 -->
+                <li>                    <!-- 条目：纹身规则 -->
+                    <key>TattooDef</key>                    <!-- 目标类型：纹身定义（面部/身体） -->
+                    <value>                        <!-- 具体规则值开始 -->
+                        <hasStyle>false</hasStyle>                        <!-- 关闭风格：不使用任何纹身样式 -->
+                    </value>                    <!-- 具体规则值结束 -->
+                </li>                <!-- 纹身规则结束 -->
+            </styleSettings>            <!-- 风格设置块结束 -->
+
+            <!-- 通用设置：性别概率、成年年龄、免疫与医疗、部件生成器等 -->
+            <generalSettings>
+                <!-- 设置为只有女性的种族（体型白名单仅 Female，因此男性概率需为 0） -->
+                <maleGenderProbability>0</maleGenderProbability>
+                <minAgeForAdulthood>18</minAgeForAdulthood>
+                <immuneToXenophobia>false</immuneToXenophobia>
+                <immuneToAge>false</immuneToAge>                <!-- 机械体免疫衰老 -->
+                <humanRecipeImport>true</humanRecipeImport>                <!-- 机械体不使用人类医疗 -->
+
+                <!-- 身体部件生成器：体型/头型白名单、颜色通道与附加叠层 -->
+                <alienPartGenerator>
+                    <!-- 体型白名单：仅使用 Female 体型 -->
+                    <bodyTypes>
+                        <li>Female</li>
+                    </bodyTypes>
+                    <!-- 头型白名单：不继承人类头型，仅使用自定义头型 -->
+                    <headTypes Inherit="False">
+                        <li>Luoshumeng_Head_A</li>
+                    </headTypes>
+
+                    <!-- 关键修改：确保颜色通道配置正确 -->
+                    <colorChannels>
+                        <li>
+                            <name>skin</name>
+                            <first Class="ColorGenerator_Single">
+                                <color>RGB(255,255,255)</color>
+                            </first>
+                        </li>
+                        <li>
+                            <name>hair</name>
+                            <first Class="ColorGenerator_Single">
+                                <color>RGB(255,255,255)</color>
+                            </first>
+                        </li>
+                        <li>
+                            <name>Sclera</name>
+                            <first Class="ColorGenerator_Single">
+                                <color>RGB(255,255,255)</color>
+                            </first>
+                        </li>
+                        <li>
+                            <name>Eyeball</name>
+                            <first Class="ColorGenerator_Single">
+                                <color>RGB(255,255,255)</color>
+                            </first>
+                        </li>
+                        <li>
+                            <name>Eyelash</name>
+                            <first Class="ColorGenerator_Single">
+                                <color>RGB(255,255,255)</color>
+                            </first>
+                        </li>
+                    </colorChannels>
+
+                    <!-- 身体附加部件：按渲染顺序绘制的装饰/器官贴图 -->
+                    <bodyAddons>
+                        <li>
+                            <name>newHuman_Head</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/newHuman/Head/NH_Head</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.1</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.1</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.1</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.1</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <li>
+                            <name>newHuman_Hair</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/newHuman/Hair/NH_Hair</path>
+                            <colorChannel>hair</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.2</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.2</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.2</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.2</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <li>
+                            <name>newHuman_Sclera</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/newHuman/Sclera/NH_Sclera</path>
+                            <colorChannel>Sclera</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <li>
+                            <name>newHuman_Eyeball</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/newHuman/Eyeball/NH_EyeBall</path>
+                            <colorChannel>Eyeball</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.16</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.16</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.16</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.16</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <li>
+                            <name>newHuman_Eyelash</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/newHuman/Eyelash/NH_Eyelash</path>
+                            <colorChannel>Eyelash</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.3</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.3</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.3</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.3</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <li>
+                            <name>newHuman_Nose</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/newHuman/Nose/NH_Nose</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                        <li>
+                            <name>newHuman_Mouth</name>
+                            <userCustomizable>true</userCustomizable>
+                            <path>AlienRace/newHuman/Mouth/NH_Mouth</path>
+                            <colorChannel>skin</colorChannel>
+                            <inFrontOfBody>true</inFrontOfBody>
+                            <layerInvert>false</layerInvert>
+                            <angle>0</angle>
+                            <drawSize>1</drawSize>
+                            <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                            <defaultOffset>Center</defaultOffset>
+                            <alignWithHead>true</alignWithHead>
+                            <conditions>
+                                <BodyPart>
+                                    <bodyPart>Head</bodyPart>
+                                </BodyPart>
+                                <Posture>
+                                    <drawnStanding>true</drawnStanding>
+                                    <drawnLaying>true</drawnLaying>
+                                    <drawnInBed>true</drawnInBed>
+                                </Posture>
+                            </conditions>
+                            <offsets>
+                                <west>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </west>
+                                <south>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </south>
+                                <north>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0, 0.162)</offset>
+                                </north>
+                                <east>
+                                    <layerOffset>0.15</layerOffset>
+                                    <offset>(0.068, 0.168)</offset>
+                                </east>
+                            </offsets>
+                        </li>
+                    </bodyAddons>
+                </alienPartGenerator>
+            </generalSettings>
+
+            <graphicPaths>
+                <skinShader>Cutout</skinShader>
+                <head>
+                    <path>AlienRace/newHuman/Head/</path>
+                </head>
+                <body>
+                    <path>AlienRace/newHuman/Body/NH_Body</path>
+                </body>
+                <skeleton>Path/To/Skeleton</skeleton>
+            </graphicPaths>
+        </alienRace>
+
+        <!-- 近战工具：定义该种族在无武器时的徒手攻击手段与数值 -->
+        <tools>
+            <li>
+                <label>left fist</label>
+                <labelNoLocation>fist</labelNoLocation>
+                <capacities>
+                    <li>Blunt</li>
+                </capacities>
+                <power>8.2</power>
+                <cooldownTime>2</cooldownTime>
+                <linkedBodyPartsGroup>LeftHand</linkedBodyPartsGroup>
+                <surpriseAttack>
+                    <extraMeleeDamages>
+                        <li>
+                            <def>Stun</def>
+                            <amount>14</amount>
+                        </li>
+                    </extraMeleeDamages>
+                </surpriseAttack>
+            </li>
+            <li>
+                <label>right fist</label>
+                <labelNoLocation>fist</labelNoLocation>
+                <capacities>
+                    <li>Blunt</li>
+                </capacities>
+                <power>8.2</power>
+                <cooldownTime>2</cooldownTime>
+                <linkedBodyPartsGroup>RightHand</linkedBodyPartsGroup>
+                <surpriseAttack>
+                    <extraMeleeDamages>
+                        <li>
+                            <def>Stun</def>
+                            <amount>14</amount>
+                        </li>
+                    </extraMeleeDamages>
+                </surpriseAttack>
+            </li>
+            <li>
+                <label>head</label>
+                <capacities>
+                    <li>Blunt</li>
+                </capacities>
+                <power>5</power>
+                <cooldownTime>2</cooldownTime>
+                <linkedBodyPartsGroup>HeadAttackTool</linkedBodyPartsGroup>
+                <ensureLinkedBodyPartsGroupAlwaysUsable>true</ensureLinkedBodyPartsGroupAlwaysUsable>
+                <chanceFactor>0.2</chanceFactor>
+            </li>
+        </tools>
+
+        <!-- 基础属性：贸易价值、移动速度与可燃性等通用数值 -->
+        <statBases>
+            <MarketValue>1500</MarketValue>
+            <MoveSpeed>4.6</MoveSpeed>
+            <Flammability>0.7</Flammability>
+            <CarryingCapacity>100</CarryingCapacity>
+            <NegotiationAbility>1.0</NegotiationAbility>
+            <MiningYield>1.0</MiningYield>
+            <MiningSpeed>1.0</MiningSpeed>
+            <PlantHarvestYield>1.0</PlantHarvestYield>
+            <PlantWorkSpeed>1.0</PlantWorkSpeed>
+            <ButcheryFleshSpeed>1.0</ButcheryFleshSpeed>
+            <ButcheryMechanoidSpeed>1.0</ButcheryMechanoidSpeed>
+            <ButcheryFleshEfficiency>1.0</ButcheryFleshEfficiency>
+            <ButcheryMechanoidEfficiency>1.0</ButcheryMechanoidEfficiency>
+            <AnimalGatherSpeed>1.0</AnimalGatherSpeed>
+            <AnimalGatherYield>1.0</AnimalGatherYield>
+            <ToxicResistance>0.0</ToxicResistance>
+            <PainShockThreshold>0.5</PainShockThreshold>
+            <InjuryHealingFactor>1.0</InjuryHealingFactor>
+        </statBases>
+        <!-- 种族通用属性：AI 思维树、渲染树、寿命、身体、饮食、命名等 -->
+        <race>
+            <thinkTreeMain>Humanlike</thinkTreeMain>
+            <thinkTreeConstant>HumanlikeConstant</thinkTreeConstant>
+            <intelligence>Humanlike</intelligence>
+            <renderTree>Humanlike</renderTree>
+            <makesFootprints>true</makesFootprints>
+            <lifeExpectancy>8000</lifeExpectancy>
+            <leatherDef>Leather_Human</leatherDef>
+            <nameCategory>HumanStandard</nameCategory>
+            <bloodDef>Filth_Blood</bloodDef>
+            <bloodSmearDef>Filth_BloodSmear</bloodSmearDef>
+            <fleshType>Normal</fleshType>
+            <!-- 使用专门的机械身体类型 -->
+            <body>BodyDef_newHuman</body>
+            <baseBodySize>1</baseBodySize>
+            <baseHealthScale>1</baseHealthScale>
+            <foodType>OmnivoreHuman</foodType>
+            <gestationPeriodDays>30</gestationPeriodDays>
+            <meatMarketValue>1</meatMarketValue>
+            <manhunterOnDamageChance>0.1</manhunterOnDamageChance>
+            <manhunterOnTameFailChance>0.02</manhunterOnTameFailChance>
+            <!-- 使用自定义的命名规则包 -->
+            <nameGenerator>NamerPersonLuoshumeng</nameGenerator>
+
+            <!-- 添加必要的种族属性 -->
+            <soundCallIntervalRange>2000~5000</soundCallIntervalRange>
+            <canBecomeShambler>true</canBecomeShambler>
+            <hasUnnaturalCorpse>true</hasUnnaturalCorpse>
+            <soundMeleeDodge>Pawn_MeleeDodge</soundMeleeDodge>
+
+            <!-- 生命阶段：各阶段最小年龄（用于图形/行为切换） -->
+            <lifeStageAges>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeBaby</def>
+                    <minAge>0</minAge>
+                </li>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeChild</def>
+                    <minAge>3</minAge>
+                </li>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeTeenager</def>
+                    <minAge>13</minAge>
+                </li>
+                <li Class="AlienRace.LifeStageAgeAlien">
+                    <def>HumanlikeAdult</def>
+                    <minAge>18</minAge>
+                </li>
+            </lifeStageAges>
+            <hediffGiverSets>
+                <li>Human</li>
+            </hediffGiverSets>
+        </race>
+    </AlienRace.ThingDef_AlienRace>
+</Defs>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- ==================== 治疗手枪主体定义 ==================== -->
+  <ThingDef ParentName="BaseHumanMakeableGun">
+    <!-- 唯一标识符，用于代码中引用 -->
+    <defName>healing_pistol</defName>
+    <!-- 游戏中显示的名称 -->
+    <label>治疗手枪</label>
+    <!-- 物品描述，显示在信息面板中 -->
+    <description>治疗手枪，可以治疗伤口。</description>
+
+    <!-- ==================== 图形和贴图设置 ==================== -->
+    <!-- 贴图路径：需要将纹理文件放到 Textures/weapon/healing_pistol.png -->
+    <graphicData>
+      <texPath>weapon/healing_pistol</texPath>
+      <!-- 图形类：单张贴图，适用于大多数武器 -->
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+
+    <!-- 交互音效：使用步枪的交互音效 -->
+    <soundInteract>Interact_Rifle</soundInteract>
+
+    <!-- ==================== 制作要求设置 ==================== -->
+    <recipeMaker>
+      <!-- 研究前提：需要先研究精确步枪技术 -->
+      <researchPrerequisite>PrecisionRifling</researchPrerequisite>
+      <!-- 技能要求：制作技能需要达到6级 -->
+      <skillRequirements>
+        <Crafting>6</Crafting>
+      </skillRequirements>
+      <!-- 工作技能：制作时提升制作技能经验 -->
+      <workSkill>Crafting</workSkill>
+      <!-- 显示优先级：在制作菜单中的排序位置 -->
+      <displayPriority>400</displayPriority>
+    </recipeMaker>
+
+    <!-- ==================== 武器分类和标签 ==================== -->
+    <!-- 武器标签：用于AI行为、交易等系统识别 -->
+    <weaponTags>
+      <li>UnionWeapon</li>      <!-- 联盟武器标签 -->
+      <li>SpacerGun</li>      <!-- 太空时代枪械标签 -->
+      <li>Gun</li>      <!-- 枪械标签 -->
+    </weaponTags>
+    <!-- 武器分类：影响AI使用策略和武器选择 -->
+    <weaponClasses>
+      <li>RangedHeavy</li>      <!-- 重型远程武器分类 -->
+    </weaponClasses>
+
+    <!-- ==================== 制作材料成本 ==================== -->
+    <!-- 制作所需的材料数量和类型 -->
+    <costList>
+      <Steel>60</Steel>      <!-- 钢铁：60单位 -->
+      <ComponentIndustrial>3</ComponentIndustrial>      <!-- 工业零件：3个 -->
+      <ComponentSpacer>1</ComponentSpacer>      <!-- 太空零件：1个 -->
+    </costList>
+
+    <!-- ==================== 基础属性统计 ==================== -->
+    <statBases>
+      <!-- 市场价值：影响交易价格 -->
+      <MarketValue>1080</MarketValue>
+      <!-- 重量：影响携带和移动速度 -->
+      <Mass>1.4</Mass>
+      <!-- 美观度：影响房间美观度评分 -->
+      <Beauty>4</Beauty>
+      <!-- 易燃性：0.1表示10%的易燃程度 -->
+      <Flammability>0.10</Flammability>
+      <!-- 老化速率：每天损失0.5%的耐久度 -->
+      <DeteriorationRate>0.5</DeteriorationRate>
+
+      <!-- ==================== 武器性能统计 ==================== -->
+      <!-- 武器冷却时间：射击后的冷却时间（秒） -->
+      <!-- 修改：从0.1秒改为3秒，确保射击间隔 -->
+      <RangedWeapon_Cooldown>3.0</RangedWeapon_Cooldown>
+
+      <!-- 命中精度：不同距离的命中率 -->
+      <AccuracyTouch>0.85</AccuracyTouch>      <!-- 贴身距离：85%命中率 -->
+      <AccuracyShort>0.80</AccuracyShort>      <!-- 近距离：80%命中率 -->
+      <AccuracyMedium>0.55</AccuracyMedium>      <!-- 中距离：55%命中率 -->
+      <AccuracyLong>0.35</AccuracyLong>      <!-- 远距离：35%命中率 -->
+
+      <!-- 制作工作量：制作这个武器需要的工作量 -->
+      <WorkToMake>180</WorkToMake>
+    </statBases>
+
+    <!-- ==================== 技术等级 ==================== -->
+    <!-- 技术等级：影响AI殖民地的科技发展要求 -->
+    <techLevel>Spacer</techLevel>
+
+    <!-- ==================== 交易标签 ==================== -->
+    <!-- 用于AI交易系统识别可交易的物品类型 -->
+    <tradeTags>
+      <li>WeaponRanged</li>      <!-- 远程武器交易标签 -->
+    </tradeTags>
+
+    <!-- ==================== 射击行为设置 ==================== -->
+    <verbs>
+      <li>
+        <!-- 动词类：射击行为 -->
+        <verbClass>Verb_Shoot</verbClass>
+        <!-- 是否显示标准命令按钮 -->
+        <hasStandardCommand>true</hasStandardCommand>
+        <!-- 默认发射的弹药类型 -->
+        <defaultProjectile>Bullet_healing_pistol</defaultProjectile>
+        <!-- 预热时间：瞄准到射击的时间（秒） -->
+        <warmupTime>0.1</warmupTime>
+        <!-- 射程：最大射击距离（格数） -->
+        <range>20</range>
+        <!-- 连发间隔：每次射击之间的间隔时间（tick，1秒=60tick） -->
+        <!-- 设置为180tick = 3秒，实现3秒一发的效果 -->
+        <ticksBetweenBurstShots>180</ticksBetweenBurstShots>
+        <!-- 连发数量：每次射击发射的子弹数量 -->
+        <burstShotCount>1</burstShotCount>
+        <!-- 射击音效：射击时的声音 -->
+        <soundCast>Shot_AssaultRifle</soundCast>
+        <!-- 射击尾音：射击后的回音效果 -->
+        <soundCastTail>GunTail_Medium</soundCastTail>
+        <!-- 枪口火焰大小：视觉效果 -->
+        <muzzleFlashScale>9</muzzleFlashScale>
+      </li>
+    </verbs>
+
+    <!-- ==================== 近战攻击设置 ==================== -->
+    <!-- 当无法射击时，可以用枪托和枪管进行近战攻击 -->
+    <tools>
+      <li>
+        <label>stock</label>        <!-- 枪托标签 -->
+        <capacities>
+          <li>Blunt</li>
+        </capacities>        <!-- 钝击伤害类型 -->
+        <power>8</power>        <!-- 攻击力：8点 -->
+        <cooldownTime>2</cooldownTime>        <!-- 冷却时间：2秒 -->
+      </li>
+      <li>
+        <label>barrel</label>        <!-- 枪管标签 -->
+        <capacities>
+          <li>Blunt</li>
+        </capacities>        <!-- 钝击伤害类型 -->
+        <power>9</power>        <!-- 攻击力：9点 -->
+        <cooldownTime>2</cooldownTime>        <!-- 冷却时间：2秒 -->
+      </li>
+    </tools>
+  </ThingDef>
+
+  <!-- ==================== 治疗针弹药定义 ==================== -->
+  <ThingDef ParentName="BaseBullet">
+    <!-- 弹药唯一标识符 -->
+    <defName>Bullet_healing_pistol</defName>
+    <!-- 弹药显示名称 -->
+    <label>治疗针</label>
+    <!-- 自定义弹药类：用于实现治疗逻辑 -->
+    <!-- 修正：使用正确的类名 Bullet_healing_pistol -->
+    <thingClass>PromotionLib.Projectile.Bullet_healing_pistol</thingClass>
+
+    <!-- ==================== 弹药图形设置 ==================== -->
+    <!-- 贴图路径：需要将纹理文件放到 Textures/projectile/HealingNeedle.png -->
+    <graphicData>
+      <texPath>projectile/HealingNeedle</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+    <modExtensions>
+      <li Class="PromotionLib.Projectile.Bullet_healing_pistoExt">
+        <TrackingStrength>28</TrackingStrength>        <!-- 追踪强度，越大越“拐弯” -->
+        <TendQualityMin>0.30</TendQualityMin>        <!-- 最小治疗品质（0~1） -->
+        <TendQualityMax>0.80</TendQualityMax>        <!-- 最大治疗品质（0~1） -->
+      </li>
+    </modExtensions>
+    <!-- ==================== 弹道属性设置 ==================== -->
+    <projectile>
+      <!-- 伤害类型：子弹伤害 -->
+      <damageDef>Bullet</damageDef>
+      <!-- 基础伤害：1点伤害 -->
+      <damageAmountBase>1</damageAmountBase>
+      <!-- 护甲穿透：1点穿透力 -->
+      <armorPenetrationBase>1</armorPenetrationBase>
+      <!-- 抑止能力：1.0表示标准抑止效果 -->
+      <stoppingPower>1.0</stoppingPower>
+      <!-- 飞行速度：50格/秒 -->
+      <speed>50</speed>
+    </projectile>
+  </ThingDef>
+
+</Defs>

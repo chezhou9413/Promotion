@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThingDef ParentName="ApparelMakeableBase">
+    <defName>CloneAlliHeavy_Armor</defName>
+    <label>联盟克隆人重型外骨骼装甲</label>
+    <description>联盟克隆人部队的重型装甲型号，在标准"基石"型基础上大幅强化了防护性能。内置了先进的能量护盾系统，能够在战斗中为穿戴者提供额外的保护层。虽然重量增加导致机动性有所下降，但其卓越的防护能力使其成为前线突击部队的首选装备。</description>
+    <possessionCount>1</possessionCount>
+    <recipeMaker>
+      <researchPrerequisite>PlateArmor</researchPrerequisite>
+      <skillRequirements>
+        <Crafting>8</Crafting>
+      </skillRequirements>
+      <displayPriority>260</displayPriority>
+    </recipeMaker>
+    <graphicData>
+      <texPath>Things/Apparel/CloneAlliHeavy/CloneArmor</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawOffset>(0, 0, 0)</drawOffset>
+    </graphicData>
+    <costList>
+      <Gold>480</Gold>
+      <ComponentSpacer>32</ComponentSpacer>
+      <ComponentIndustrial>2</ComponentIndustrial>
+      <Synthread>120</Synthread>
+      <Plasteel>60</Plasteel>
+      <Uranium>15</Uranium>
+    </costList>
+    <statBases>
+      <WorkToMake>400</WorkToMake>
+      <MaxHitPoints>800</MaxHitPoints>
+      <Mass>12</Mass>
+      <ArmorRating_Sharp>1.55</ArmorRating_Sharp>
+      <ArmorRating_Blunt>0.85</ArmorRating_Blunt>
+      <ArmorRating_Heat>0.90</ArmorRating_Heat>
+      <Insulation_Cold>40</Insulation_Cold>
+      <Insulation_Heat>30</Insulation_Heat>
+      <EquipDelay>7</EquipDelay>
+      <MarketValue>3600</MarketValue>
+      <Beauty>6</Beauty>
+      <Flammability>0.05</Flammability>
+      <DeteriorationRate>0.3</DeteriorationRate>
+    </statBases>
+    <thingSetMakerTags>
+      <li>RewardStandardQualitySuper</li>
+    </thingSetMakerTags>
+    <equippedStatOffsets>
+      <MoveSpeed>0.10</MoveSpeed>
+      <PsychicSensitivity>-0.15</PsychicSensitivity>
+      <ToxicEnvironmentResistance>0.40</ToxicEnvironmentResistance>
+      <InjuryHealingFactor>-0.10</InjuryHealingFactor>
+      <ImmunityGainSpeed>0.25</ImmunityGainSpeed>
+      <CarryingCapacity>15</CarryingCapacity>
+    </equippedStatOffsets>
+    <thingCategories>
+      <li>ApparelArmor</li>
+    </thingCategories>
+    <tradeTags>
+      <li>Clothing</li>
+      <li>Armor</li>
+    </tradeTags>
+    <techLevel>Spacer</techLevel>
+    <apparel>
+      <bodyPartGroups>
+        <li>Torso</li>
+        <li>Neck</li>
+        <li>Shoulders</li>
+        <li>Arms</li>
+        <li>Legs</li>
+      </bodyPartGroups>
+      <wornGraphicPath>Things/Apparel/CloneAlliHeavy/CloneArmor</wornGraphicPath>
+      <layers>
+        <li>Middle</li>
+        <li>Shell</li>
+      </layers>
+      <tags>
+        <li>UnionArmor</li>
+        <li>Spacer</li>
+        <li>SpacerMilitary</li>
+        <li>HeavyArmor</li>
+      </tags>
+      <defaultOutfitTags>
+        <li>Soldier</li>
+        <li>Heavy</li>
+      </defaultOutfitTags>
+      <!-- 确保护甲不会阻止武器使用 -->
+      <renderSkipFlags>
+        <li>Hair</li>
+        <li>Beard</li>
+      </renderSkipFlags>
+    </apparel>
+    <comps>
+      <li Class="PromotionLib.CompProperties_DisableBodyType" />
+      <!-- 暂时注释掉护盾组件来测试是否是护盾导致的问题 -->
+      <!--
+        <li Class="RimWorld.CompProperties_Shield">
+            <energyShieldEnergyMax>200</energyShieldEnergyMax>
+            <energyShieldRechargeRate>12</energyShieldRechargeRate>
+            <energyShieldRechargeDelay>1.2</energyShieldRechargeDelay>
+        </li>
+        -->
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="ApparelMakeableBase">
+    <defName>CloneAlliHeavy_Helmet</defName>
+    <label>联盟克隆人重型头盔</label>
+    <description>配套重型外骨骼装甲的头盔，具有卓越的防护性能和先进的护盾协调系统。头盔内置的传感器能够与装甲护盾同步，提供更好的防护覆盖和战术信息。</description>
+    <possessionCount>1</possessionCount>
+    <recipeMaker>
+      <researchPrerequisite>PlateArmor</researchPrerequisite>
+      <skillRequirements>
+        <Crafting>8</Crafting>
+      </skillRequirements>
+      <displayPriority>260</displayPriority>
+    </recipeMaker>
+    <graphicData>
+      <texPath>Things/Helmet/CloneAlliHeavy/CloneHelmet</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawOffset>(0, 0, -0.2)</drawOffset>
+    </graphicData>
+    <costList>
+      <Gold>240</Gold>
+      <ComponentSpacer>15</ComponentSpacer>
+      <Synthread>60</Synthread>
+      <Plasteel>30</Plasteel>
+      <Uranium>8</Uranium>
+    </costList>
+    <statBases>
+      <WorkToMake>200</WorkToMake>
+      <MaxHitPoints>400</MaxHitPoints>
+      <Mass>6</Mass>
+      <ArmorRating_Sharp>1.25</ArmorRating_Sharp>
+      <ArmorRating_Blunt>0.85</ArmorRating_Blunt>
+      <ArmorRating_Heat>0.90</ArmorRating_Heat>
+      <Insulation_Cold>20</Insulation_Cold>
+      <Insulation_Heat>15</Insulation_Heat>
+      <EquipDelay>3.5</EquipDelay>
+      <MarketValue>1800</MarketValue>
+      <Beauty>3</Beauty>
+      <Flammability>0.05</Flammability>
+      <DeteriorationRate>0.3</DeteriorationRate>
+    </statBases>
+    <thingSetMakerTags>
+      <li>RewardStandardQualitySuper</li>
+    </thingSetMakerTags>
+    <equippedStatOffsets>
+      <MoveSpeed>0.05</MoveSpeed>
+      <PsychicSensitivity>-0.10</PsychicSensitivity>
+      <ToxicEnvironmentResistance>0.20</ToxicEnvironmentResistance>
+      <!-- 增加命中率相关属性 -->
+      <AimingDelayFactor>-0.20</AimingDelayFactor>
+      <ShootingAccuracyPawn>0.15</ShootingAccuracyPawn>
+      <!-- 注意：SightRange不是有效的统计定义，移除或使用正确的统计 -->
+      <!-- <SightRange>0.25</SightRange> -->
+    </equippedStatOffsets>
+    <thingCategories>
+      <li>ApparelArmor</li>
+    </thingCategories>
+    <tradeTags>
+      <li>Clothing</li>
+      <li>Armor</li>
+    </tradeTags>
+    <techLevel>Spacer</techLevel>
+    <apparel>
+      <bodyPartGroups>
+        <li>FullHead</li>
+      </bodyPartGroups>
+      <wornGraphicPath>Things/Helmet/CloneAlliHeavy/CloneHelmet</wornGraphicPath>
+      <renderSkipFlags>
+        <li>Hair</li>
+        <li>Beard</li>
+        <li>Eyes</li>
+      </renderSkipFlags>
+      <layers>
+        <li>Overhead</li>
+      </layers>
+      <tags>
+        <li>UnionArmor</li>
+        <li>Spacer</li>
+        <li>SpacerMilitary</li>
+        <li>HeavyArmor</li>
+      </tags>
+      <defaultOutfitTags>
+        <li>Soldier</li>
+        <li>Heavy</li>
+      </defaultOutfitTags>
+      <drawData>
+        <defaultData>
+          <offset>(0, 0, -0.3)</offset>
+        </defaultData>
+        <dataNorth>
+          <offset>(0, 0, -0.3)</offset>
+        </dataNorth>
+        <dataEast>
+          <offset>(-0.1, 0, -0.35)</offset>
+        </dataEast>
+        <dataSouth>
+          <offset>(0, 0, -0.3)</offset>
+        </dataSouth>
+      </drawData>
+    </apparel>
+  </ThingDef>
+
+
+
+
+  <ThingDef ParentName="ApparelMakeableBase">
+    <defName>shengdanmao</defName>
+    <label>白色圣诞帽</label>
+    <description>一个非常可爱的白色圣诞帽</description>
+    <possessionCount>1</possessionCount>
+    <recipeMaker>
+      <researchPrerequisite>PlateArmor</researchPrerequisite>
+      <skillRequirements>
+        <Crafting>8</Crafting>
+      </skillRequirements>
+      <displayPriority>260</displayPriority>
+    </recipeMaker>
+    <graphicData>
+      <texPath>Things/Helmet/CloneAlliHeavy/shengdanmao</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawOffset>(0, 0, 0)</drawOffset>
+    </graphicData>
+    <costList>
+      <Gold>240</Gold>
+      <ComponentSpacer>15</ComponentSpacer>
+      <Synthread>60</Synthread>
+      <Plasteel>30</Plasteel>
+      <Uranium>8</Uranium>
+    </costList>
+    <statBases>
+      <WorkToMake>200</WorkToMake>
+      <MaxHitPoints>400</MaxHitPoints>
+      <Mass>6</Mass>
+      <ArmorRating_Sharp>1.25</ArmorRating_Sharp>
+      <ArmorRating_Blunt>0.85</ArmorRating_Blunt>
+      <ArmorRating_Heat>0.90</ArmorRating_Heat>
+      <Insulation_Cold>20</Insulation_Cold>
+      <Insulation_Heat>15</Insulation_Heat>
+      <EquipDelay>3.5</EquipDelay>
+      <MarketValue>1800</MarketValue>
+      <Beauty>3</Beauty>
+      <Flammability>0.05</Flammability>
+      <DeteriorationRate>0.3</DeteriorationRate>
+    </statBases>
+    <thingSetMakerTags>
+      <li>RewardStandardQualitySuper</li>
+    </thingSetMakerTags>
+    <equippedStatOffsets>
+      <MoveSpeed>0.05</MoveSpeed>
+      <PsychicSensitivity>-0.10</PsychicSensitivity>
+      <ToxicEnvironmentResistance>0.20</ToxicEnvironmentResistance>
+      <!-- 增加命中率相关属性 -->
+      <AimingDelayFactor>-0.20</AimingDelayFactor>
+      <ShootingAccuracyPawn>0.15</ShootingAccuracyPawn>
+      <!-- 注意：SightRange不是有效的统计定义，移除或使用正确的统计 -->
+      <!-- <SightRange>0.25</SightRange> -->
+    </equippedStatOffsets>
+    <thingCategories>
+      <li>ApparelArmor</li>
+    </thingCategories>
+    <tradeTags>
+      <li>Clothing</li>
+      <li>Armor</li>
+    </tradeTags>
+    <techLevel>Spacer</techLevel>
+    <apparel>
+      <bodyPartGroups>
+        <li>FullHead</li>
+      </bodyPartGroups>
+      <wornGraphicPath>Things/Helmet/CloneAlliHeavy/shengdanmao</wornGraphicPath>
+      <renderSkipFlags>
+        <li>Hair</li>
+        <li>Beard</li>
+        <li>Eyes</li>
+      </renderSkipFlags>
+      <layers>
+        <li>Overhead</li>
+      </layers>
+      <tags>
+        <li>UnionArmor</li>
+        <li>Spacer</li>
+        <li>SpacerMilitary</li>
+        <li>HeavyArmor</li>
+      </tags>
+      <defaultOutfitTags>
+        <li>Soldier</li>
+        <li>Heavy</li>
+      </defaultOutfitTags>
+      <drawData>
+        <defaultData>
+          <offset>(0, 0, 0.8)</offset>
+        </defaultData>
+      </drawData>
+    </apparel>
+  </ThingDef>
+</Defs> 

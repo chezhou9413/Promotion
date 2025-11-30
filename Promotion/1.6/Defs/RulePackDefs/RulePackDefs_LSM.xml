@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- 落枢梦种族完整命名规则包 -->
+  <RulePackDef>
+    <defName>NamerPersonLuoshumeng</defName>
+    <rulePack>
+      <rulesStrings>
+        <!-- 基本名字格式 -->
+        <li>r_name->[firstName] [lastName]</li>
+        <li>r_name->[firstName] '[nickName]' [lastName]</li>
+        
+        <!-- 女性名字选择 - 直接使用中文 -->
+        <li>firstName->流明</li>
+        <li>firstName->炽天使</li>
+        <li>firstName->虹膜</li>
+        <li>firstName->天琴</li>
+        <li>firstName->织女</li>
+        <li>firstName->仙女座</li>
+        <li>firstName->卡珊德拉</li>
+        <li>firstName->凤凰</li>
+        <li>firstName->和谐</li>
+        <li>firstName->旋律</li>
+        <li>firstName->奏鸣曲</li>
+        <li>firstName->交响乐</li>
+        <li>firstName->韵律</li>
+        <li>firstName->节奏</li>
+        <li>firstName->优雅</li>
+        <li>firstName->宁静</li>
+        <li>firstName->安宁</li>
+        <li>firstName->和平</li>
+        <li>firstName->希望</li>
+        <li>firstName->信仰</li>
+        <li>firstName->慈善</li>
+        <li>firstName->慈悲</li>
+        <li>firstName->同情</li>
+        <li>firstName->智慧</li>
+        <li>firstName->知识</li>
+        <li>firstName->真理</li>
+        <li>firstName->美丽</li>
+        <li>firstName->爱</li>
+        <li>firstName->喜悦</li>
+        <li>firstName->极乐</li>
+        <li>firstName->狂喜</li>
+        
+        <!-- 姓氏选择 - 直接使用中文 -->
+        <li>lastName->星尘</li>
+        <li>lastName->月光</li>
+        <li>lastName->阳光</li>
+        <li>lastName->彩虹</li>
+        <li>lastName->雷霆</li>
+        <li>lastName->闪电</li>
+        <li>lastName->风暴</li>
+        <li>lastName->风</li>
+        <li>lastName->云</li>
+        <li>lastName->薄雾</li>
+        <li>lastName->雾</li>
+        <li>lastName->露珠</li>
+        <li>lastName->霜</li>
+        <li>lastName->雪</li>
+        <li>lastName->冰</li>
+        <li>lastName->火</li>
+        <li>lastName->火焰</li>
+        <li>lastName->烈焰</li>
+        <li>lastName->火花</li>
+        <li>lastName->余烬</li>
+        <li>lastName->灰烬</li>
+        <li>lastName->烟</li>
+        <li>lastName->蒸汽</li>
+        <li>lastName->微风</li>
+        <li>lastName->狂风</li>
+        <li>lastName->飓风</li>
+        <li>lastName->龙卷风</li>
+        <li>lastName->旋风</li>
+        <li>lastName->台风</li>
+        <li>lastName->季风</li>
+        
+        <!-- 昵称选择 - 直接使用中文 -->
+        <li>nickName->星辰</li>
+        <li>nickName->月亮</li>
+        <li>nickName->太阳</li>
+        <li>nickName->天空</li>
+        <li>nickName->海洋</li>
+        <li>nickName->河流</li>
+        <li>nickName->山脉</li>
+        <li>nickName->森林</li>
+        <li>nickName->花园</li>
+        <li>nickName->花朵</li>
+        <li>nickName->树木</li>
+        <li>nickName->叶子</li>
+        <li>nickName->种子</li>
+        <li>nickName->根</li>
+        <li>nickName->枝</li>
+        <li>nickName->树干</li>
+        <li>nickName->树皮</li>
+        <li>nickName->花瓣</li>
+        <li>nickName->茎</li>
+        <li>nickName->刺</li>
+        <li>nickName->藤蔓</li>
+        <li>nickName->苔藓</li>
+        <li>nickName->地衣</li>
+        <li>nickName->藻类</li>
+        <li>nickName->真菌</li>
+        <li>nickName->蘑菇</li>
+        <li>nickName->草药</li>
+        <li>nickName->香料</li>
+        <li>nickName->精华</li>
+        <li>nickName->灵魂</li>
+        <li>nickName->心灵</li>
+      </rulesStrings>
+    </rulePack>
+  </RulePackDef>
+</Defs> 

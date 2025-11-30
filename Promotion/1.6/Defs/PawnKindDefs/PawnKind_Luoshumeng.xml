@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+    <PawnKindDef ParentName="BasePlayerPawnKind">
+        <defName>ExampleAlienColonist</defName>
+        <label>测试机</label>
+        <race>Luoshumeng</race>
+        <defaultFactionType>PlayerColony</defaultFactionType>
+
+        <!-- This is a required field. 13~21 is the default value for Crashlanded player colonists. -->
+        <initialResistanceRange>13~21</initialResistanceRange>
+        <!-- 添加缺失的initialWillRange字段，这是AlienRace模组所需的必要字段 -->
+        <initialWillRange>0~1</initialWillRange>
+        <!-- 添加缺失的invNutrition字段，这是PawnKindDef的必要字段 -->
+        <invNutrition>2.55</invNutrition>
+        <!-- 添加缺失的itemQuality字段，这是PawnKindDef的必要字段 -->
+        <itemQuality>Normal</itemQuality>
+        <!-- 添加缺失的backstoryCryptosleepCommonality字段，这是PawnKindDef的必要字段 -->
+        <backstoryCryptosleepCommonality>1</backstoryCryptosleepCommonality>
+
+        <!-- 默认装备配置 -->
+        <apparelRequired>
+            <li>LSMtestApparel</li>
+        </apparelRequired>
+        <modExtensions>
+            <li Class="ChezhouLib.Extension.kindRule">
+                <bodyAddonRules>
+                    <li>
+                        <BodyAddonName>Luoshumeng_Hair</BodyAddonName>
+                        <ReplacePath>AlienRace/newHuman/Hair/NH_Hair</ReplacePath>
+                    </li>
+                </bodyAddonRules>
+            </li>
+        </modExtensions>
+    </PawnKindDef>
+
+    <PawnKindDef ParentName="BasePlayerPawnKind">
+        <defName>newHumanTest</defName>
+        <label>新人类测试</label>
+        <race>newHuman</race>
+        <defaultFactionType>PlayerColony</defaultFactionType>
+        <apparelRequired>
+            <li>newHuman_GeneNarrativeResearchSuit</li>
+        </apparelRequired>
+        <!-- This is a required field. 13~21 is the default value for Crashlanded player colonists. -->
+        <initialResistanceRange>13~21</initialResistanceRange>
+        <!-- 添加缺失的initialWillRange字段，这是AlienRace模组所需的必要字段 -->
+        <initialWillRange>0~1</initialWillRange>
+        <!-- 添加缺失的invNutrition字段，这是PawnKindDef的必要字段 -->
+        <invNutrition>2.55</invNutrition>
+        <!-- 添加缺失的itemQuality字段，这是PawnKindDef的必要字段 -->
+        <itemQuality>Normal</itemQuality>
+        <!-- 添加缺失的backstoryCryptosleepCommonality字段，这是PawnKindDef的必要字段 -->
+        <backstoryCryptosleepCommonality>1</backstoryCryptosleepCommonality>
+    </PawnKindDef>
+    <PawnKindDef ParentName="BasePlayerPawnKind">
+        <defName>newHumanMaid</defName>
+        <label>新人类女仆</label>
+        <race>newHuman</race>
+        <defaultFactionType>PlayerColony</defaultFactionType>
+        <apparelRequired>
+            <li>newHuman_MaidUniform</li>
+            <li>newHuman_MaidHeadgear</li>
+        </apparelRequired>
+        <!-- This is a required field. 13~21 is the default value for Crashlanded player colonists. -->
+        <initialResistanceRange>13~21</initialResistanceRange>
+        <!-- 添加缺失的initialWillRange字段，这是AlienRace模组所需的必要字段 -->
+        <initialWillRange>0~1</initialWillRange>
+        <!-- 添加缺失的invNutrition字段，这是PawnKindDef的必要字段 -->
+        <invNutrition>2.55</invNutrition>
+        <!-- 添加缺失的itemQuality字段，这是PawnKindDef的必要字段 -->
+        <itemQuality>Normal</itemQuality>
+        <!-- 添加缺失的backstoryCryptosleepCommonality字段，这是PawnKindDef的必要字段 -->
+        <backstoryCryptosleepCommonality>1</backstoryCryptosleepCommonality>
+    </PawnKindDef>
+</Defs>
+

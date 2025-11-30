@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 新人类女仆帽子 -->
+    <ThingDef Name="newHuman_MaidHeadgear" ParentName="newHuman_ApparelBase">
+        <defName>newHuman_MaidHeadgear</defName>
+        <label>女仆帽子</label>
+        <description>新人类女仆制服的配套帽子。轻巧而优雅，带有经典的褶边和蝴蝶结装饰，完美搭配女仆装。</description>
+
+        <!-- 物品分类 -->
+        <thingCategories>
+            <li>Headgear</li>
+        </thingCategories>
+
+        <!-- 制作成本：使用固定材料成本 -->
+        <costList>
+            <Cloth>10</Cloth>
+        </costList>
+
+        <!-- 图形数据：地面显示贴图 -->
+        <graphicData>
+            <texPath>Item/Headgear/MaidHeadgear</texPath>
+            <graphicClass>Graphic_Multi</graphicClass>
+            <color>(1,1,1,1)</color>
+            <drawSize>1</drawSize>
+        </graphicData>
+
+        <!-- 基础属性：最大生命值、制作工作量、护甲评级 -->
+        <statBases>
+            <MaxHitPoints>60</MaxHitPoints>
+            <WorkToMake>1200</WorkToMake>
+            <Mass>0.05</Mass>
+            <ArmorRating_Sharp>0.05</ArmorRating_Sharp>
+            <ArmorRating_Blunt>0.05</ArmorRating_Blunt>
+            <ArmorRating_Heat>0.05</ArmorRating_Heat>
+            <EquipDelay>0.5</EquipDelay>
+        </statBases>
+
+        <!-- 装备时的属性偏移：增强社交和美观 -->
+        <equippedStatOffsets>
+            <SocialImpact>0.05</SocialImpact>
+            <Beauty>1</Beauty>
+        </equippedStatOffsets>
+
+        <!-- 穿戴层级和身体部位覆盖 -->
+        <apparel>
+            <parentTagDef>ApparelHead</parentTagDef>
+            <bodyPartGroups>
+                <li>UpperHead</li>
+            </bodyPartGroups>
+            <layers>
+                <li>Overhead</li>
+            </layers>
+            <!-- 穿戴时的图形路径 -->
+        </apparel>
+
+        <!-- 制作配方：研究前提条件 -->
+        <recipeMaker>
+            <researchPrerequisites>
+                <li>ComplexClothing</li>
+            </researchPrerequisites>
+        </recipeMaker>
+
+        <!-- 禁用熔炼功能 -->
+        <smeltable>false</smeltable>
+        <comps>
+            <li Class="ChezhouLib.comp.ApparelAddBodyAddonCompProperties">
+                <bodyAddonDefs>
+                    <li>
+                        <name>newHuman_TEST</name>
+                        <userCustomizable>true</userCustomizable>
+                        <path>Item/Headgear/MaidHeadgear</path>
+                        <colorChannel>Eyelash</colorChannel>
+                        <inFrontOfBody>true</inFrontOfBody>
+                        <layerInvert>false</layerInvert>
+                        <angle>0</angle>
+                        <drawSize>1</drawSize>
+                        <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                        <defaultOffset>Center</defaultOffset>
+                        <alignWithHead>true</alignWithHead>
+                        <conditions>
+                            <BodyPart>
+                                <bodyPart>Head</bodyPart>
+                            </BodyPart>
+                            <Posture>
+                                <drawnStanding>true</drawnStanding>
+                                <drawnLaying>true</drawnLaying>
+                                <drawnInBed>true</drawnInBed>
+                            </Posture>
+                        </conditions>
+                        <offsets>
+                            <west>
+                                <layerOffset>0.6</layerOffset>
+                                <offset>(0.068, 0.168)</offset>
+                            </west>
+                            <south>
+                                <layerOffset>0.6</layerOffset>
+                                <offset>(0, 0.162)</offset>
+                            </south>
+                            <north>
+                                <layerOffset>-1</layerOffset>
+                                <offset>(0, 0.162)</offset>
+                            </north>
+                            <east>
+                                <layerOffset>0.6</layerOffset>
+                                <offset>(0.068, 0.168)</offset>
+                            </east>
+                        </offsets>
+                    </li>
+                    <li>
+                        <name>newHuman_TEST2</name>
+                        <userCustomizable>true</userCustomizable>
+                        <path>Things/Helmet/CloneKeystone/CloneHelmet</path>
+                        <colorChannel>Eyelash</colorChannel>
+                        <inFrontOfBody>true</inFrontOfBody>
+                        <layerInvert>false</layerInvert>
+                        <angle>0</angle>
+                        <drawSize>1</drawSize>
+                        <scaleWithPawnDrawsize>true</scaleWithPawnDrawsize>
+                        <defaultOffset>Center</defaultOffset>
+                        <alignWithHead>true</alignWithHead>
+                        <conditions>
+                            <BodyPart>
+                                <bodyPart>Head</bodyPart>
+                            </BodyPart>
+                            <Posture>
+                                <drawnStanding>true</drawnStanding>
+                                <drawnLaying>true</drawnLaying>
+                                <drawnInBed>true</drawnInBed>
+                            </Posture>
+                        </conditions>
+                        <offsets>
+                            <west>
+                                <layerOffset>0.6</layerOffset>
+                                <offset>(0.068, 0.168)</offset>
+                            </west>
+                            <south>
+                                <layerOffset>0.6</layerOffset>
+                                <offset>(0, 0.162)</offset>
+                            </south>
+                            <north>
+                                <layerOffset>-1</layerOffset>
+                                <offset>(0, 0.162)</offset>
+                            </north>
+                            <east>
+                                <layerOffset>0.6</layerOffset>
+                                <offset>(0.068, 0.168)</offset>
+                            </east>
+                        </offsets>
+                    </li>
+                </bodyAddonDefs>
+            </li>
+            <li Class="CompProperties_Forbiddable"/>
+        </comps>
+
+        <!-- 强制使用原始颜色，禁用染色 -->
+        <colorGenerator Class="ColorGenerator_Single">
+            <color>(1,1,1,1)</color>
+        </colorGenerator>
+    </ThingDef>
+</Defs>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 新人类女仆装 -->
+    <ThingDef Name="newHuman_MaidUniform" ParentName="newHuman_OnSkinBase">
+        <defName>newHuman_MaidUniform</defName>
+        <label>女仆装</label>
+        <description>经典女仆制服。采用优质材料制作，黑白配色设计优雅，红色蝴蝶结装饰增添可爱感。这套服装既实用又美观，适合各种场合穿着。</description>
+        
+        <!-- 制作成本：使用固定材料成本 -->
+        <costList>
+            <Steel>20</Steel>
+            <ComponentIndustrial>1</ComponentIndustrial>
+        </costList>
+        
+        <!-- 图形数据：贴图路径 -->
+        <graphicData>
+            <texPath>Item/OnSkin/Maid</texPath>
+            <graphicClass>Graphic_Multi</graphicClass>
+            <color>(1,1,1,1)</color>
+        </graphicData>
+        
+        <!-- 基础属性：最大生命值、制作工作量、护甲评级 -->
+        <statBases>
+            <MaxHitPoints>120</MaxHitPoints>
+            <WorkToMake>3600</WorkToMake>
+            <ArmorRating_Sharp>0.05</ArmorRating_Sharp>
+            <ArmorRating_Blunt>0.2</ArmorRating_Blunt>
+            <ArmorRating_Heat>0.3</ArmorRating_Heat>
+            <!-- 禁用材料效果：移除 StuffEffectMultiplier -->
+        </statBases>
+        
+        <!-- 服装属性：发育阶段过滤、身体部位组、穿着图形路径、标签 -->
+        <apparel>
+            <developmentalStageFilter>Adult</developmentalStageFilter>
+            <bodyPartGroups>
+                <li>Torso</li>
+            </bodyPartGroups>
+            <wornGraphicPath>Item/OnSkin/Maid</wornGraphicPath>
+            <tags>
+                <li>newHuman_MaidUniform</li>
+                <li>newHuman_Formal</li>
+                <li>newHuman_Service</li>
+            </tags>
+        </apparel>
+        
+        <!-- 制作配方：研究前提条件 -->
+        <recipeMaker>
+            <researchPrerequisites>
+                <li>ComplexClothing</li>
+            </researchPrerequisites>
+        </recipeMaker>
+        
+        <!-- 装备时的属性偏移：增强社交相关能力 -->
+        <equippedStatOffsets>
+            <SocialImpact>0.1</SocialImpact>
+            <Beauty>3</Beauty>
+            <Comfort>0.05</Comfort>
+        </equippedStatOffsets>
+        
+        <!-- 特殊效果：女仆装加成 -->
+        
+        <!-- 禁用染色功能 -->
+        <comps>
+            <li Class="CompProperties_Forbiddable"/>
+        </comps>
+        
+        <!-- 禁用熔炼功能 -->
+        <smeltable>false</smeltable>
+        
+        <!-- 强制使用原始颜色，禁用染色 -->
+        <colorGenerator Class="ColorGenerator_Single">
+            <color>(1,1,1,1)</color>
+        </colorGenerator>
+    </ThingDef>
+</Defs>

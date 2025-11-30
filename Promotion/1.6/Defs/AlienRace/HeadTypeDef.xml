@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<HeadTypeDef ParentName="AverageBase">
+		<defName>Luoshumeng_Head_A</defName>
+		<graphicPath>AlienRace/Luoshumeng/HairNull/Null</graphicPath>
+		<gender>None</gender>
+	</HeadTypeDef>
+
+</Defs>
