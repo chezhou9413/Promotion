@@ -23,6 +23,7 @@ namespace PromotionLib.PrLibThingComp
         public int CureLeve;
         public float CurePower;
         public int CureTick;
+        public int CureMaintainTick; // 药物效果持续时间
         public ThingCompProperties_InfectionCure Props => (ThingCompProperties_InfectionCure)this.props;
 
         public override void Initialize(CompProperties props)
@@ -30,14 +31,17 @@ namespace PromotionLib.PrLibThingComp
             base.Initialize(props);
             CureLeve = Props.CureLeve;
             CurePower = Props.CurePower;
+            // CureTick 是治疗读条时间，直接使用配置值
+            CureTick = Props.CureTick;
+
+            // CureMaintainTime 是药物效果持续时间，可以是随机范围
             if (Props.CureMaintainTime != Vector2.zero)
             {
-
-                CureTick = (int)Rand.Range(Props.CureMaintainTime.x, Props.CureMaintainTime.y);
+                CureMaintainTick = (int)Rand.Range(Props.CureMaintainTime.x, Props.CureMaintainTime.y);
             }
             else
             {
-                CureTick = Props.CureTick;
+                CureMaintainTick = Props.CureTick; // 如果没设置，默认等于治疗时间
             }
         }
 
@@ -48,7 +52,7 @@ namespace PromotionLib.PrLibThingComp
             {
                 pawn.health.RemoveHediff(hediff);
             }
-            hediff  = pawn.health.AddHediff(PrLibHediffDefOf.PRON_Antibiotic);
+            hediff = pawn.health.AddHediff(PrLibHediffDefOf.PRON_Antibiotic);
             var antibioticComp = hediff.TryGetComp<PrLibHediffComp.HediffComp_Antibiotic>();
             if (antibioticComp != null)
             {
@@ -64,6 +68,7 @@ namespace PromotionLib.PrLibThingComp
             Scribe_Values.Look(ref CureLeve, "CureLeve", 0);
             Scribe_Values.Look(ref CurePower, "CurePower", 0f);
             Scribe_Values.Look(ref CureTick, "CureTick", 0);
+            Scribe_Values.Look(ref CureMaintainTick, "CureMaintainTick", 0);
         }
     }
 }

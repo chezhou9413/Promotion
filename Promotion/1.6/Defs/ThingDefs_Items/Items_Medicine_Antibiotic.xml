@@ -41,7 +41,7 @@
                 <!-- 治疗力 -->
                 <CurePower>0.05</CurePower>
                 <!-- 药物使用时间 -->
-                <CureTick>5</CureTick>
+                <CureTick>300</CureTick>
                 <!-- 药物持续时间 -->
                 <CureMaintainTime>(25000, 50000)</CureMaintainTime>
             </li>

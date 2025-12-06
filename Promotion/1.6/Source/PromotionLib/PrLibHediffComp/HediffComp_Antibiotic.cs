@@ -22,7 +22,7 @@ namespace PromotionLib.PrLibHediffComp
         {
             this.cureLevel = drugProps.CureLeve;
             this.curePower = drugProps.CurePower;
-            this.ticksRemaining = drugProps.CureTick;
+            this.ticksRemaining = drugProps.CureMaintainTick;
         }
 
         public override void CompPostTick(ref float severityAdjustment)

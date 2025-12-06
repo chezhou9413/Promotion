@@ -23,13 +23,15 @@ namespace PromotionLib.PrLibJob
         {
             yield return Toils_Bed.GotoBed(BedIndex);
             Toil layDown = Toils_LayDown.LayDown(BedIndex, true, false, false, false);
-            layDown.AddPreTickAction(() =>
+            layDown.AddEndCondition(() =>
             {
                 if (pawn.health.hediffSet.HasHediff(PrLibHediffDefOf.PRON_Antibiotic))
                 {
-                    EndJobWith(JobCondition.Succeeded);
+                    return JobCondition.Succeeded;
                 }
+                return JobCondition.Ongoing;
             });
+
             yield return layDown;
         }
     }
