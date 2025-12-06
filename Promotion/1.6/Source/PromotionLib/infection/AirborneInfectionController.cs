@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using PromotionLib.PrLibDefOf;
 using PromotionLib.PrLibHediffComp;
 using RimWorld;
 using System.Collections.Generic;
