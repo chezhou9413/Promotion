@@ -8,6 +8,7 @@
     <priorityInType>115</priorityInType>
     <verb>治疗</verb>
     <gerund>正在治疗</gerund>
+    <emergency>true</emergency>
     <requiredCapacities>
       <li>Moving</li>
     </requiredCapacities>

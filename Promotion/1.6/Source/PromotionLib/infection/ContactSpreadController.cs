@@ -13,6 +13,7 @@ namespace PromotionLib.infection
     public class ContactSpreadController
     {
         public const bool isDebug = true;
+
         // 消毒/防护等抗性系数
         private const float DisinfectionFactor = 0.2f;
 
@@ -34,7 +35,8 @@ namespace PromotionLib.infection
 
             tmpStrains.Clear();
             tmpStrains.AddRange(comp.VirusStrain);
-            int infected = 0;
+
+            // 不使用 UniqueID 或名称去重；重复感染判断交由 InfectionUtility.IsInfectedWithVirus 处理
 
             foreach (var vs in tmpStrains)
             {
@@ -49,6 +51,8 @@ namespace PromotionLib.infection
                 if (!InfectionUtility.CheckRaceInfectability(target, vs.virus))
                     continue;
 
+                // 去重
+                string uid = vs.virus.UniqueID ?? vs.virus.StrainName ?? "";
                 //防护/消毒抵抗
                 if (applyDisinfectionResist)
                 {
@@ -68,7 +72,6 @@ namespace PromotionLib.infection
                     if (InfectionUtility.IsInfectedWithVirus(target, vs.virus))
                     {
                         InfectionUtility.ExecuteVirusTransmission(target, vs.virus);
-                        infected++;
                     }
                 }
             }
@@ -143,7 +146,7 @@ namespace PromotionLib.infection
                 if (comp == null)
                     return;
 
-                // 食用时尝试感染：应用消毒抵抗，限制每次事件的感染数量
+                // 食用时尝试感染：应用消毒抵抗
                 TryInfectPawnFromComp(ingester, comp, applyDisinfectionResist: true);
             }
         }
@@ -164,7 +167,7 @@ namespace PromotionLib.infection
                 if (comp == null)
                     return;
 
-                // 穿戴装备时尝试感染：应用消毒抵抗，限制每次事件感染数量
+                // 穿戴装备时尝试感染：应用消毒抵抗
                 TryInfectPawnFromComp(pawn, comp, applyDisinfectionResist: true);
             }
         }
@@ -182,7 +185,7 @@ namespace PromotionLib.infection
                 if (comp == null)
                     return;
 
-                // 使用物品时尝试感染：应用消毒抵抗，限制每次事件感染数量
+                // 使用物品时尝试感染：应用消毒抵抗
                 TryInfectPawnFromComp(p, comp, applyDisinfectionResist: true);
             }
         }

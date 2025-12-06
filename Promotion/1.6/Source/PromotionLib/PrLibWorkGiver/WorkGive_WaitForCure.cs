@@ -56,7 +56,7 @@ namespace PromotionLib.PrLibWorkGiver
                 HediffComp_VirusStrainContainer hediffComp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
                 if (hediffComp?.virus != null)
                 {
-                    if (hediffComp.virus.IsPositiveEffect == false && hediffComp.IncubationPeriod)
+                    if (hediffComp.virus.IsPositiveEffect == false && !hediffComp.IncubationPeriod)
                     {
                         return true;
                     }
