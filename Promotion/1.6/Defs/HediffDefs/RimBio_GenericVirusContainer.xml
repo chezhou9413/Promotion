@@ -7,7 +7,8 @@
     <description>一种通用的病毒感染容器，可以承载各种不同类型的病毒毒株。具体效果取决于所携带的病毒类型。</description>
     <hediffClass>PromotionLib.riwbioHediff</hediffClass>
     <initialSeverity>0.01</initialSeverity>
-    <tendable>true</tendable>
+    <!-- 前往不要写true,不管是什么毒株 -->
+    <tendable>false</tendable>
     <isBad>true</isBad>
     <comps>
       <li Class="HediffCompProperties_SeverityPerDay">
