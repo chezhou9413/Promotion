@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using PromotionLib.PrLibDefOf;
 using PromotionLib.PrLibHediffComp;
 using RimWorld;
 using System.Collections.Generic;
@@ -10,11 +9,7 @@ namespace PromotionLib
 {
     public class AirborneInfectionController : MapComponent
     {
-        private const int IntervalTicks = 180;           // 完整扫描周期
-        private const int Slices = 6;                    // 将一次完整扫描切成 6 片
-        private const int MaxInfectionsPerSourcePerSlice = 3; // 每个源 pawn 在一个切片内最多感染的数量
         private const float RadiusFactor = 0.2f; 
-        private int sliceCursor = 0;                   
 
         // 复用的临时列表
         private static readonly List<Pawn> tmpNearby = new List<Pawn>();
@@ -23,24 +18,17 @@ namespace PromotionLib
 
         public override void MapComponentTick()
         {
-            int sliceInterval = IntervalTicks / Slices;
-            if (Find.TickManager.TicksGame % sliceInterval != 0)
-                return;
             var pawns = map.mapPawns.AllPawnsSpawned;
             int count = pawns.Count;
             if (count == 0)
                 return;
-            int batchSize = Mathf.Max(1, count / Slices);
-            int start = sliceCursor * batchSize;
-            int end = (sliceCursor == Slices - 1) ? count : Mathf.Min(count, start + batchSize);
-            for (int i = start; i < end; i++)
+            for (int i = 0; i < count; i++)
             {
                 Pawn pawn = pawns[i];
                 if (pawn == null || !pawn.Spawned)
                     continue;
                 HandleAirborneInfectionForSource(pawn);
             }
-            sliceCursor = (sliceCursor + 1) % Slices;
         }
         private void HandleAirborneInfectionForSource(Pawn source)
         {
@@ -65,7 +53,6 @@ namespace PromotionLib
                 tmpNearby.Clear();
                 FillNearbyCreatures(source, radius, tmpNearby);
 
-                int infectedThisSlice = 0;
                 float baseProb = Mathf.Clamp01(comp.virus.Infectivity / 100f);
 
                 foreach (Pawn target in tmpNearby)
@@ -96,9 +83,6 @@ namespace PromotionLib
                         if (InfectionUtility.IsInfectedWithVirus(target, comp.virus))
                         {
                             InfectionUtility.ExecuteVirusTransmission(target, comp.virus);
-                            infectedThisSlice++;
-                            if (infectedThisSlice >= MaxInfectionsPerSourcePerSlice)
-                                break; // 控制单源在本切片内最多感染数量，避免尖峰负载
                         }
                     }
                 }
