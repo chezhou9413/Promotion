@@ -33,7 +33,7 @@ namespace PromotionLib.PrLibThingComp
             CurePower = Props.CurePower;
             // CureTick 是治疗读条时间，直接使用配置值
             CureTick = Props.CureTick;
-
+            
             // CureMaintainTime 是药物效果持续时间，可以是随机范围
             if (Props.CureMaintainTime != Vector2.zero)
             {
@@ -52,7 +52,7 @@ namespace PromotionLib.PrLibThingComp
             {
                 pawn.health.RemoveHediff(hediff);
             }
-            hediff = pawn.health.AddHediff(PrLibHediffDefOf.PRON_Antibiotic);
+            hediff  = pawn.health.AddHediff(PrLibHediffDefOf.PRON_Antibiotic);
             var antibioticComp = hediff.TryGetComp<PrLibHediffComp.HediffComp_Antibiotic>();
             if (antibioticComp != null)
             {
