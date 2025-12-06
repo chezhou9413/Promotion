@@ -1,5 +1,4 @@
-﻿using PromotionLib.PrLibDefOf;
-using PromotionLib.PrLibThingComp;
+﻿using PromotionLib.PrLibThingComp;
 using RimWorld;
 using System.Collections.Generic;
 using Verse;
@@ -7,71 +6,81 @@ using Verse.AI;
 
 namespace PromotionLib.PrLibJob
 {
-    public class JobDiver_InfectionCure:JobDriver
+    public class JobDiver_InfectionCure : JobDriver
     {
         protected Pawn Patient => (Pawn)job.targetA.Thing;
         protected Thing Medicine => job.targetB.Thing;
 
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
-            // 同时预定病人和药物
             return pawn.Reserve(Patient, job, 1, -1, null, errorOnFailed) &&
                    pawn.Reserve(Medicine, job, 1, -1, null, errorOnFailed);
         }
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
-            //Log.Message($"[InfectionCure] 开始执行治疗任务:\n" +
-            //             $"  - 医生 (Doctor): {pawn.LabelShort} (ID: {pawn.thingIDNumber})\n" +
-            //             $"  - 病人 (Patient): {(Patient != null ? Patient.LabelShort : "null")}\n" +
-            //             $"  - 药物 (Medicine): {(Medicine != null ? Medicine.LabelShort : "null")}");
-            //去拿药
-            // 设定失败条件：如果药没了或病人死了/好了
+            // 基础失败条件
             this.FailOnDestroyedOrNull(TargetIndex.A);
             this.FailOnDestroyedOrNull(TargetIndex.B);
             this.FailOnAggroMentalState(TargetIndex.A);
             this.FailOn(() => !Patient.InBed());
-            //走到药物位置
             yield return Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.ClosestTouch)
                 .FailOnForbidden(TargetIndex.B);
+
+            //拿起药物
             yield return Toils_Haul.StartCarryThing(TargetIndex.B, false, false, false);
+            Toil checkCarry = new Toil();
+            checkCarry.initAction = () =>
+            {
+                if (pawn.carryTracker.CarriedThing == null || pawn.carryTracker.CarriedThing != Medicine)
+                {
+                    EndJobWith(JobCondition.Incompletable);
+                }
+            };
+            yield return checkCarry;
+
+            //走到病人位置
             yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
+
+            //治疗过程（读条）
             Toil treatToil = new Toil();
             treatToil.defaultCompleteMode = ToilCompleteMode.Delay;
-            ThingComp_InfectionCure comp_InfectionCure = Medicine?.TryGetComp<ThingComp_InfectionCure>();
-            treatToil.defaultDuration = comp_InfectionCure != null ? comp_InfectionCure.CureTick : 500;
-            //让病人不动
+            var tempComp = Medicine?.TryGetComp<ThingComp_InfectionCure>();
+            treatToil.defaultDuration = tempComp != null ? tempComp.CureTick : 500;
+
+            treatToil.WithProgressBarToilDelay(TargetIndex.A);
             treatToil.initAction = () =>
             {
                 pawn.pather.StopDead();
             };
-
             treatToil.tickAction = () =>
             {
                 pawn.rotationTracker.FaceTarget(Patient);
             };
-            treatToil.WithProgressBarToilDelay(TargetIndex.A);
-            treatToil.AddFinishAction(() =>
-            {
-                // ✅ 完善的防御性检查
-                if (Patient != null && !Patient.Destroyed && 
-                    Medicine != null && !Medicine.Destroyed)
-                {
-                    if (comp_InfectionCure != null)
-                    {
-                        comp_InfectionCure.CurePawn(Patient);
-                    }
-                    else
-                    {
-                        Log.Warning($"[InfectionCure] 药物 {Medicine.Label} 没有 ThingComp_InfectionCure 组件");
-                    }
-                }
-                else
-                {
-                    Log.Warning($"[InfectionCure] 治疗失败 - 病人或药物已销毁或为null");
-                }
-            });
+            //只有当Toil正常完成时才进入下一步，如果被打断将不会进入下一个
             yield return treatToil;
+
+            // 确保只有上面的读条完全结束后才会执行
+            Toil applyEffectToil = new Toil();
+            applyEffectToil.initAction = () =>
+            {
+                Pawn actor = applyEffectToil.actor;
+                Pawn patient = Patient;
+                Thing medicine = Medicine;
+
+                if (patient != null && !patient.Destroyed && medicine != null && !medicine.Destroyed)
+                {
+                    // 在执行的这一刻，重新获取组件，确保获取的是正确的实例（因为堆叠分裂可能改变了实例）
+                    ThingComp_InfectionCure finalComp = medicine.TryGetComp<ThingComp_InfectionCure>();
+
+                    if (finalComp != null)
+                    {
+                        finalComp.CurePawn(patient);
+                    }
+                }
+            };
+            applyEffectToil.defaultCompleteMode = ToilCompleteMode.Instant;
+            yield return applyEffectToil;
         }
     }
 }
