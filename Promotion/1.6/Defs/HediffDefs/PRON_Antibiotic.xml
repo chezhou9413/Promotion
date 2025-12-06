@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 以身为剑 Hediff 定义 -->
+    <HediffDef>
+        <defName>PRON_Antibiotic</defName>
+        <label>抗生素</label>
+        <description>这里是简介</description>
+        <descriptionShort>里是简介</descriptionShort>
+
+        <!-- 基础属性 -->
+        <hediffClass>HediffWithComps</hediffClass>
+        <isBad>false</isBad>
+        <initialSeverity>1</initialSeverity>
+        <maxSeverity>1</maxSeverity>
+        <defaultLabelColor>(0.8, 0.2, 0.2)</defaultLabelColor>
+        <comps>
+            <li Class="PromotionLib.PrLibHediffComp.HediffCompProperties_Antibiotic"/>
+        </comps>
+        <stages>
+            <li>
+                <label>抗生素</label>
+            </li>
+        </stages>
+    </HediffDef>
+</Defs>

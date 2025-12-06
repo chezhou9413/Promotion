@@ -1,4 +1,5 @@
-﻿using RimWorld;
+﻿using PromotionLib.PrLibHediffComp;
+using RimWorld;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;

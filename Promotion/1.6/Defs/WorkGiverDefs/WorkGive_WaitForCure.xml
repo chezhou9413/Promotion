@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <WorkGiverDef>
+    <defName>WorkGive_WaitForCure</defName>
+    <label>等待治疗</label>
+    <giverClass>PromotionLib.PrLibWorkGiver.WorkGive_WaitForCure</giverClass>
+    <workType>Patient</workType>
+    <priorityInType>115</priorityInType>
+    <verb>治疗</verb>
+    <gerund>正在治疗</gerund>
+    <requiredCapacities>
+      <li>Moving</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+</Defs>

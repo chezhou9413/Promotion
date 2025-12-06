@@ -1,1 +1,22 @@
-﻿<?xml version="1.0" encoding="utf-8"?><Patch><Operation Class="PatchOperationConditional"><xpath>Defs/ThingDef[defName="Apparel_PlateArmor"]/statBases</xpath><match Class="PatchOperationAdd"><xpath>Defs/ThingDef[defName="Apparel_PlateArmor"]/statBases</xpath><value><Disinfection_level>3</Disinfection_level><Sealing_level>5</Sealing_level></value></match><nomatch Class="PatchOperationAdd"><xpath>Defs/ThingDef[defName="Apparel_PlateArmor"]</xpath><value><statBases><Disinfection_level>3</Disinfection_level><Sealing_level>5</Sealing_level></statBases></value></nomatch></Operation></Patch> 
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+    <Operation Class="PatchOperationConditional">
+        <xpath>Defs/ThingDef[defName="Apparel_PlateArmor"]/statBases</xpath>
+        <match Class="PatchOperationAdd">
+            <xpath>Defs/ThingDef[defName="Apparel_PlateArmor"]/statBases</xpath>
+            <value>
+                <Disinfection_level>3</Disinfection_level>
+                <Sealing_level>5</Sealing_level>
+            </value>
+        </match>
+        <nomatch Class="PatchOperationAdd">
+            <xpath>Defs/ThingDef[defName="Apparel_PlateArmor"]</xpath>
+            <value>
+                <statBases>
+                    <Disinfection_level>3</Disinfection_level>
+                    <Sealing_level>5</Sealing_level>
+                </statBases>
+            </value>
+        </nomatch>
+    </Operation>
+</Patch> 

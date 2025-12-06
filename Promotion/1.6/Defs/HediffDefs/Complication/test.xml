@@ -179,4 +179,123 @@
         </comps>
     </HediffDef>
 
+  
+    <!-- 发热（Fever）并发症 -->
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_Fever</defName>
+        <label>发热</label>
+        <description>体温升高、精神恍惚与体力下降的全身性反应。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+        <stages>
+            <li>
+                <painOffset>0.05</painOffset>
+                <capMods>
+                    <li>
+                        <capacity>Consciousness</capacity>
+                        <offset>-0.05</offset>
+                    </li>
+                </capMods>
+                <statFactors>
+                    <MoveSpeed>0.9</MoveSpeed>
+                    <RestRateMultiplier>0.9</RestRateMultiplier>
+                    <ImmunityGainSpeed>0.9</ImmunityGainSpeed>
+                </statFactors>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>GenericComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>
+                <severityPerDayTended>-0.5</severityPerDayTended>
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>
+                <showTendQuality>true</showTendQuality>
+            </li>
+        </comps>
+    </HediffDef>
+
+    <!-- 虚弱（Weakness）并发症 -->
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_Weakness</defName>
+        <label>全身乏力</label>
+        <description>肌肉酸软与体力不足，影响移动与操作能力。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+        <stages>
+            <li>
+                <capMods>
+                    <li>
+                        <capacity>Moving</capacity>
+                        <offset>-0.15</offset>
+                    </li>
+                    <li>
+                        <capacity>Manipulation</capacity>
+                        <offset>-0.1</offset>
+                    </li>
+                </capMods>
+                <statFactors>
+                    <MoveSpeed>0.85</MoveSpeed>
+                </statFactors>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>GenericComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>
+                <severityPerDayTended>-0.5</severityPerDayTended>
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>
+                <showTendQuality>true</showTendQuality>
+            </li>
+        </comps>
+    </HediffDef>
+
+    <!-- 恶心（Nausea）并发症 -->
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_Nausea</defName>
+        <label>恶心反胃</label>
+        <description>胃部不适与反胃，导致进食与休息效率下降。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+        <stages>
+            <li>
+                <painOffset>0.03</painOffset>
+                <statFactors>
+                    <EatingSpeed>0.75</EatingSpeed>
+                    <RestRateMultiplier>0.9</RestRateMultiplier>
+                    <MoveSpeed>0.95</MoveSpeed>
+                </statFactors>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>GenericComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>
+                <severityPerDayTended>-0.5</severityPerDayTended>
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>
+                <showTendQuality>true</showTendQuality>
+            </li>
+        </comps>
+    </HediffDef>
+
 </Defs>

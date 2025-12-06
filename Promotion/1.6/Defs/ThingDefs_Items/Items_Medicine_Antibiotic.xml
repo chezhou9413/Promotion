@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <!-- 无疗效但可用于包扎/治疗流程的“药品” -->
+    <ThingDef ParentName="ResourceBase">
+        <defName>Promotion_Medicine_Antibiotic</defName>
+        <label>抗生素</label>
+        <description>不提供任何医疗加成，但可作为药品用于执行包扎/治疗流程的消耗品。</description>
+
+        <!-- 关键：必须为 Medicine 才会被视为可用于治疗的物品 -->
+        <thingClass>Medicine</thingClass>
+
+        <!-- 分类到 Medicine，便于AI与界面识别与过滤 -->
+        <thingCategories>
+            <li>Medicine</li>
+        </thingCategories>
+        <graphicData>
+            <texPath>Item/OnSkin/GeneNarrativeResearchSuit</texPath>
+            <graphicClass>Graphic_Single</graphicClass>
+        </graphicData>
+
+        <!-- 基本堆叠与交易属性，可按需调整 -->
+        <stackLimit>75</stackLimit>
+        <tradeability>All</tradeability>
+
+        <statBases>
+            <!-- 关键：医疗效能为 0，相当于“没有任何治疗作用” -->
+            <MedicalPotency>0</MedicalPotency>
+            <Mass>0.02</Mass>
+            <MarketValue>1</MarketValue>
+        </statBases>
+
+        <tradeTags>
+            <li>Medicine</li>
+        </tradeTags>
+
+        <techLevel>Industrial</techLevel>
+        <comps>
+            <li Class="PromotionLib.PrLibThingComp.ThingCompProperties_InfectionCure">
+            <!-- 药物等级 -->
+                <CureLeve>2</CureLeve>
+                <!-- 治疗力 -->
+                <CurePower>0.05</CurePower>
+                <!-- 药物使用时间 -->
+                <CureTick>5</CureTick>
+                <!-- 药物持续时间 -->
+                <CureMaintainTime>(25000, 50000)</CureMaintainTime>
+            </li>
+        </comps>
+    </ThingDef>
+</Defs>
+

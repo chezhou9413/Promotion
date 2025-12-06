@@ -13,12 +13,12 @@
       <li Class="HediffCompProperties_SeverityPerDay">
         <severityPerDay>0.05</severityPerDay>        <!-- 每天严重程度+0.05 -->
       </li>
-      <li Class="PromotionLib.HediffCompProperties_VirusStrainContainer">
+      <li Class="PromotionLib.PrLibHediffComp.HediffCompProperties_VirusStrainContainer">
         <type>PandemicVirus</type>
-
+        <!-- 治疗药物需要等级 -->
+        <needHealLeve>3</needHealLeve>
         <!-- 毒株唯一标识符 -->
         <uniqueID>silent-virus-001</uniqueID>
-
         <!-- 毒株名称 -->
         <strainName>无害观察病毒</strainName>
 
@@ -82,8 +82,8 @@
         <!-- 毒株附带的症状（字符串 ID） -->
         <symptoms>
           <li>RimBio_Complication_Fatigue</li>          <!-- 疲劳症状 -->
-          <li>RimBio_Complication_SkinRash</li>          
-          <li>RimBio_Complication_CognitiveDecline</li>        
+          <li>RimBio_Complication_SkinRash</li>
+          <li>RimBio_Complication_CognitiveDecline</li>
         </symptoms>
 
         <!-- 影响的目标种族（DefName） -->

@@ -1,123 +1,130 @@
 ﻿using HarmonyLib;
+using PromotionLib.PrLibDefOf;
+using PromotionLib.PrLibHediffComp;
 using RimWorld;
 using System.Collections.Generic;
+using UnityEngine;
 using Verse;
 
 namespace PromotionLib
 {
     public class AirborneInfectionController : MapComponent
     {
-        // 用来控制每个pawn的计时
-        private Dictionary<Pawn, int> pawnAirborneInfectionTicks = new Dictionary<Pawn, int>();
-        //创建感染的生物集合
-        private List<Pawn> nearbyCreatures = new List<Pawn>();
-        public AirborneInfectionController(Map map) : base(map)
-        {
-        }
+        private const int IntervalTicks = 180;           // 完整扫描周期
+        private const int Slices = 6;                    // 将一次完整扫描切成 6 片
+        private const int MaxInfectionsPerSourcePerSlice = 3; // 每个源 pawn 在一个切片内最多感染的数量
+        private const float RadiusFactor = 0.2f; 
+        private int sliceCursor = 0;                   
+
+        // 复用的临时列表
+        private static readonly List<Pawn> tmpNearby = new List<Pawn>();
+
+        public AirborneInfectionController(Map map) : base(map) { }
 
         public override void MapComponentTick()
         {
-            // 遍历所有的pawn
-            foreach (Pawn pawn in map.mapPawns.AllPawns)
+            int sliceInterval = IntervalTicks / Slices;
+            if (Find.TickManager.TicksGame % sliceInterval != 0)
+                return;
+            var pawns = map.mapPawns.AllPawnsSpawned;
+            int count = pawns.Count;
+            if (count == 0)
+                return;
+            int batchSize = Mathf.Max(1, count / Slices);
+            int start = sliceCursor * batchSize;
+            int end = (sliceCursor == Slices - 1) ? count : Mathf.Min(count, start + batchSize);
+            for (int i = start; i < end; i++)
             {
-                if (!pawn.Spawned)
+                Pawn pawn = pawns[i];
+                if (pawn == null || !pawn.Spawned)
                     continue;
-
-                // 如果是新pawn, 初始化计时
-                if (!pawnAirborneInfectionTicks.ContainsKey(pawn))
-                {
-                    pawnAirborneInfectionTicks[pawn] = 0;
-                }
-
-                // 每tick执行
-                pawnAirborneInfectionTicks[pawn]++;
-
-                // 每180 ticks执行一次
-                if (pawnAirborneInfectionTicks[pawn] >= 180)
-                {
-                    // 执行空气传播传染期逻辑
-                    HandleAirborneInfectionLogic(pawn);
-
-                    // 重置计时
-                    pawnAirborneInfectionTicks[pawn] = 0;
-                }
+                HandleAirborneInfectionForSource(pawn);
             }
+            sliceCursor = (sliceCursor + 1) % Slices;
         }
-
-        // 处理空气传播传染期的逻辑
-        private void HandleAirborneInfectionLogic(Pawn pawn)
+        private void HandleAirborneInfectionForSource(Pawn source)
         {
-            List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+            var hediffs = source.health?.hediffSet?.hediffs;
+            if (hediffs == null || hediffs.Count == 0)
+                return;
+
             foreach (Hediff h in hediffs)
             {
-                HediffComp_VirusStrainContainer hediffComp = h.TryGetComp<HediffComp_VirusStrainContainer>();
-                if (hediffComp != null && hediffComp.virus != null)
+                if (h == null) continue;
+
+                var comp = h.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (comp == null || comp.virus == null)
+                    continue;
+
+                // 禁用空气传播或无空气存活力则跳过
+                if (comp.DisableAirborneTransmission || comp.virus.AirSurvivability <= 0)
+                    continue;
+
+                // 计算影响半径并收集邻近pawn
+                float radius = Mathf.Max(1f, comp.virus.AirSurvivability * RadiusFactor);
+                tmpNearby.Clear();
+                FillNearbyCreatures(source, radius, tmpNearby);
+
+                int infectedThisSlice = 0;
+                float baseProb = Mathf.Clamp01(comp.virus.Infectivity / 100f);
+
+                foreach (Pawn target in tmpNearby)
                 {
-                    // 如果病毒具有空气生存能力
-                    if (hediffComp.virus.AirSurvivability > 0)
+                    if (target == null || !target.Spawned || target.Dead)
+                        continue;
+
+                    // 过滤不可感染种族
+                    if (!InfectionUtility.CheckRaceInfectability(target, comp.virus))
+                        continue;
+
+                    // 密封/防护抵抗（0~1）
+                    float resist = Mathf.Clamp01(target.GetStatValue(ValueDef.Sealing_level) * 0.2f);
+                    if (Rand.Value < resist)
+                        continue;
+
+                    // 距离衰减
+                    float dist = (source.Position - target.Position).LengthHorizontal;
+                    float falloff = Mathf.Clamp01(1f - (dist / (radius + 0.0001f)));
+
+                    float finalProb = Mathf.Clamp01(baseProb * falloff);
+                    if (finalProb <= 0f)
+                        continue;
+
+                    if (Rand.Value < finalProb)
                     {
-                        // 获取附近的生物
-                        List<Pawn> nearbyCreatures = GetNearbyCreatures(pawn, hediffComp.virus.AirSurvivability / 5);
-                        foreach (Pawn pawn1 in nearbyCreatures)
+                        // 未感染该病毒则执行传播
+                        if (InfectionUtility.IsInfectedWithVirus(target, comp.virus))
                         {
-                            if(!InfectionUtility.CheckRaceInfectability(pawn1, hediffComp.virus)){
-                                return;
-                            }
-                            // 按照传播力判断是否感染
-                            if (Rand.Value < (hediffComp.virus.Infectivity / 100f))
-                            {
-                                if(hediffComp.DisableAirborneTransmission)
-                                {
-                                    continue;
-                                }
-                                float pop = pawn1.GetStatValue(ValueDef.Sealing_level)*0.2f;
-                                if(Rand.Value < pop)
-                                {
-                                    continue;
-                                }
-                                if (InfectionUtility.IsInfectedWithVirus(pawn1, hediffComp.virus))
-                                {
-                                    InfectionUtility.ExecuteVirusTransmission(pawn1, hediffComp.virus);
-                                }
-                            }
+                            InfectionUtility.ExecuteVirusTransmission(target, comp.virus);
+                            infectedThisSlice++;
+                            if (infectedThisSlice >= MaxInfectionsPerSourcePerSlice)
+                                break; // 控制单源在本切片内最多感染数量，避免尖峰负载
                         }
                     }
                 }
             }
         }
 
-
-
-        public static List<Pawn> GetNearbyCreatures(Pawn targetPawn, float radius)
+        // 将附近 Pawn 填充到 result（避免每次 new 列表）
+        public static void FillNearbyCreatures(Pawn center, float radius, List<Pawn> result)
         {
-            List<Pawn> nearbyCreatures = new List<Pawn>();
+            if (center == null || !center.Spawned)
+                return;
 
-            // 获取目标小人所在位置的所有格子
-            IEnumerable<IntVec3> nearbyCells = GenRadial.RadialCellsAround(targetPawn.Position, radius, true);
-
-            // 遍历所有格子
-            foreach (IntVec3 cell in nearbyCells)
+            // 遍历半径内格子，收集 Pawn（不包含自身）
+            foreach (IntVec3 cell in GenRadial.RadialCellsAround(center.Position, radius, useCenter: true))
             {
-                // 确保格子有效并且在地图上
-                if (cell.InBounds(targetPawn.Map))
-                {
-                    // 获取该格子中的所有物品和生物
-                    List<Thing> thingsInCell = cell.GetThingList(targetPawn.Map);
+                if (!cell.InBounds(center.Map)) continue;
 
-                    // 遍历该格子中的所有物品和生物
-                    foreach (Thing thing in thingsInCell)
+                List<Thing> things = cell.GetThingList(center.Map);
+                for (int i = 0; i < things.Count; i++)
+                {
+                    if (things[i] is Pawn p && p != center)
                     {
-                        // 只选择Pawn类型的生物（包括小人和动物）
-                        if (thing is Pawn pawn && pawn != targetPawn)
-                        {
-                            // 将生物添加到结果列表
-                            nearbyCreatures.Add(pawn);
-                        }
+                        result.Add(p);
                     }
                 }
             }
-
-            return nearbyCreatures;
         }
     }
 }

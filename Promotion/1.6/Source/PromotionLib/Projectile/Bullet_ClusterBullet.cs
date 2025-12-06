@@ -1,6 +1,4 @@
-using PromotionLib.RwBioUI.UIMap;
 using RimWorld;
-using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
@@ -99,7 +97,6 @@ namespace PromotionLib.Projectile
         {
             Map map = this.Map;
             IntVec3 center = this.Position;
-            effMapData.spwneff("boom", 0.35f, center.ToVector3Shifted(), 3f);
             base.Impact(hitThing, blockedByShield);
         }
         /// <summary>

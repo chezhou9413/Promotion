@@ -1,8 +1,11 @@
 ﻿using HarmonyLib;
+using PromotionLib.PrLibDefOf;
+using PromotionLib.PrLibHediffComp;
 using PromotionLib.Utils;
 using RimWorld;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using Verse;
 
 namespace PromotionLib.infection
@@ -10,15 +13,66 @@ namespace PromotionLib.infection
     public class ContactSpreadController
     {
         public const bool isDebug = true;
+        // 消毒/防护等抗性系数
+        private const float DisinfectionFactor = 0.2f;
 
-        public static void RBDugInfo(string info)
+        private static void RBDugInfo(string info)
         {
             if (isDebug)
             {
                 Log.Message("[PromotionLib] " + info);
             }
         }
-        private static List<HediffComp_VirusStrainContainer> virusStrains = new List<HediffComp_VirusStrainContainer>();
+
+        private static readonly List<HediffComp_VirusStrainContainer> tmpStrains = new List<HediffComp_VirusStrainContainer>();
+
+        // 统一的接触传播尝试逻辑：从物品上的VirusStrainComp对pawn进行感染尝试
+        private static void TryInfectPawnFromComp(Pawn target, VirusStrainComp comp, bool applyDisinfectionResist)
+        {
+            if (target == null || comp == null || comp.VirusStrain == null || comp.VirusStrain.Count == 0)
+                return;
+
+            tmpStrains.Clear();
+            tmpStrains.AddRange(comp.VirusStrain);
+            int infected = 0;
+
+            foreach (var vs in tmpStrains)
+            {
+                if (vs?.virus == null)
+                    continue;
+
+                // 仅处理表面携带（接触传播）
+                if (vs.virus.SurfacePersistence <= 0)
+                    continue;
+
+                // 种族可感染性检查
+                if (!InfectionUtility.CheckRaceInfectability(target, vs.virus))
+                    continue;
+
+                //防护/消毒抵抗
+                if (applyDisinfectionResist)
+                {
+                    float resist = Mathf.Clamp01(target.GetStatValue(ValueDef.Disinfection_level) * DisinfectionFactor);
+                    if (Rand.Value < resist)
+                        continue;
+                }
+
+                // 感染基础概率
+                float p = Mathf.Clamp01(vs.virus.Infectivity / 100f);
+                if (p <= 0f)
+                    continue;
+
+                if (Rand.Value < p)
+                {
+                    // 注意：IsInfectedWithVirus 返回 true 表示可以感染（未感染）
+                    if (InfectionUtility.IsInfectedWithVirus(target, vs.virus))
+                    {
+                        InfectionUtility.ExecuteVirusTransmission(target, vs.virus);
+                        infected++;
+                    }
+                }
+            }
+        }
 
         [HarmonyPatch(typeof(GenRecipe), "PostProcessProduct")]
         public static class GenRecipe_PostProcessProduct_Patch
@@ -26,22 +80,27 @@ namespace PromotionLib.infection
             public static void Postfix(Thing product, RecipeDef recipeDef, Pawn worker, Precept_ThingStyle precept, ThingStyleDef style, Nullable<int> overrideGraphicIndex, ref Thing __result)
             {
                 Thing finalThing = __result;
-                Pawn makepawn = worker;
-                if (makepawn == null || finalThing == null)
+                Pawn maker = worker;
+                if (maker == null || finalThing == null)
                 {
-                    RBDugInfo("物品或者制作者为空");
+                    RBDugInfo("PostProcessProduct: 物品或者制作者为空");
                     return;
                 }
-                float pop = makepawn.GetStatValue(ValueDef.Disinfection_level) * 0.2f;
-                if (Rand.Value < pop)
-                {
+
+                // 制作过程的“污染被抵消”概率（由制作者的消毒水平决定）
+                float cancelProb = Mathf.Clamp01(maker.GetStatValue(ValueDef.Disinfection_level) * DisinfectionFactor);
+                if (Rand.Value < cancelProb)
                     return;
-                }
-                virusStrains = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(makepawn);
-                VirusStrainComp comp = finalThing.TryGetComp<VirusStrainComp>();
-                if (comp != null && virusStrains.Count > 0)
+
+                var comp = finalThing.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                    return;
+
+                // 从制作者身上获取病毒并附着到物品上
+                var makerStrains = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(maker);
+                if (makerStrains.Count > 0)
                 {
-                    comp.AddVirusStrainList(virusStrains);
+                    comp.AddVirusStrainList(makerStrains);
                 }
             }
         }
@@ -56,18 +115,18 @@ namespace PromotionLib.infection
             // __result = 分割后的物品（可能是新实例，也可能仍是原实例）
             static void Postfix(ref Thing __result, Thing __state)
             {
-                if (__result != null && __state != null)
-                {
-                    VirusStrainComp comp = __state.TryGetComp<VirusStrainComp>();
-                    if (comp != null)
-                    {
-                        VirusStrainComp newcomp = __result.TryGetComp<VirusStrainComp>();
-                        if (newcomp != null)
-                        {
-                            newcomp.AddVirusStrainList(comp.VirusStrain);
-                        }
-                    }
-                }
+                if (__result == null || __state == null)
+                    return;
+
+                var comp = __state.TryGetComp<VirusStrainComp>();
+                if (comp == null || comp.VirusStrain == null || comp.VirusStrain.Count == 0)
+                    return;
+
+                var newcomp = __result.TryGetComp<VirusStrainComp>();
+                if (newcomp == null)
+                    return;
+
+                newcomp.AddVirusStrainList(comp.VirusStrain);
             }
         }
 
@@ -76,37 +135,16 @@ namespace PromotionLib.infection
         {
             public static void Postfix(Thing __instance, Pawn ingester, float __result)
             {
-                // `__instance` 在这里就是被吃掉的那个物品 (Thing)
                 Thing food = __instance;
-
-                // 安全检查
                 if (ingester == null || food == null)
-                {
                     return;
-                }
-                VirusStrainComp comp = food.TryGetComp<VirusStrainComp>();
-                if (comp == null || comp.VirusStrain.Count == 0)
-                {
+
+                var comp = food.TryGetComp<VirusStrainComp>();
+                if (comp == null)
                     return;
-                }
-                virusStrains = comp.VirusStrain;
-                foreach (HediffComp_VirusStrainContainer vs in virusStrains)
-                {
-                    if (vs.virus.SurfacePersistence > 0)
-                    {
-                        if (!InfectionUtility.CheckRaceInfectability(ingester, vs.virus))
-                        {
-                            continue;
-                        }
-                        if (Rand.Value < (vs.virus.Infectivity / 100f))
-                        {
-                            if (InfectionUtility.IsInfectedWithVirus(ingester, vs.virus))
-                            {
-                                InfectionUtility.ExecuteVirusTransmission(ingester, vs.virus);
-                            }
-                        }
-                    }
-                }
+
+                // 食用时尝试感染：应用消毒抵抗，限制每次事件的感染数量
+                TryInfectPawnFromComp(ingester, comp, applyDisinfectionResist: true);
             }
         }
 
@@ -114,41 +152,20 @@ namespace PromotionLib.infection
         /// <summary>
         /// 在原始的 Notify_EquipmentAdded 方法执行完毕后运行。
         /// </summary>
-        /// <param name="__instance">Pawn_EquipmentTracker 的实例</param>
-        /// <param name="eq">刚刚被装备上的物品</param>
         public static class Pawn_EquipmentTracker_AddEquipment_Postfix
         {
             public static void Postfix(Pawn_EquipmentTracker __instance, ThingWithComps eq)
             {
-                Pawn pawn = __instance.pawn;
+                Pawn pawn = __instance?.pawn;
                 if (pawn == null || eq == null)
-                {
-                    return; // 安全检查
-                }
-                VirusStrainComp comp = eq.TryGetComp<VirusStrainComp>();
-                virusStrains = comp.VirusStrain;
-                foreach (HediffComp_VirusStrainContainer vs in virusStrains)
-                {
-                    if (vs.virus.SurfacePersistence > 0)
-                    {
-                        if (!InfectionUtility.CheckRaceInfectability(pawn, vs.virus))
-                        {
-                            continue;
-                        }
-                        float pop = pawn.GetStatValue(ValueDef.Disinfection_level) * 0.2f;
-                        if (Rand.Value < pop)
-                        {
-                            continue;
-                        }
-                        if (Rand.Value < (vs.virus.Infectivity / 100f))
-                        {
-                            if (InfectionUtility.IsInfectedWithVirus(pawn, vs.virus))
-                            {
-                                InfectionUtility.ExecuteVirusTransmission(pawn, vs.virus);
-                            }
-                        }
-                    }
-                }
+                    return;
+
+                var comp = eq.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                    return;
+
+                // 穿戴装备时尝试感染：应用消毒抵抗，限制每次事件感染数量
+                TryInfectPawnFromComp(pawn, comp, applyDisinfectionResist: true);
             }
         }
 
@@ -157,39 +174,16 @@ namespace PromotionLib.infection
         {
             public static void Postfix(CompUsable __instance, Pawn p)
             {
-                Thing usableThing = __instance.parent;
+                Thing usableThing = __instance?.parent;
                 if (p == null || usableThing == null)
-                {
                     return;
-                }
-                VirusStrainComp comp = usableThing.TryGetComp<VirusStrainComp>();
-                if (comp == null || comp.VirusStrain.Count == 0)
-                {
+
+                var comp = usableThing.TryGetComp<VirusStrainComp>();
+                if (comp == null)
                     return;
-                }
-                virusStrains = comp.VirusStrain;
-                foreach (HediffComp_VirusStrainContainer vs in virusStrains)
-                {
-                    if (vs.virus.SurfacePersistence > 0)
-                    {
-                        if (!InfectionUtility.CheckRaceInfectability(p, vs.virus))
-                        {
-                            continue;
-                        }
-                        float pop = p.GetStatValue(ValueDef.Disinfection_level) * 0.2f;
-                        if (Rand.Value < pop)
-                        {
-                            continue;
-                        }
-                        if (Rand.Value < (vs.virus.Infectivity / 100f))
-                        {
-                            if (InfectionUtility.IsInfectedWithVirus(p, vs.virus))
-                            {
-                                InfectionUtility.ExecuteVirusTransmission(p, vs.virus);
-                            }
-                        }
-                    }
-                }
+
+                // 使用物品时尝试感染：应用消毒抵抗，限制每次事件感染数量
+                TryInfectPawnFromComp(p, comp, applyDisinfectionResist: true);
             }
         }
     }

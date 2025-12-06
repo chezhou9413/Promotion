@@ -1,4 +1,5 @@
 ﻿using LudeonTK;
+using PromotionLib.PrLibHediffComp;
 using RimWorld;
 using System;
 using System.Collections.Generic;

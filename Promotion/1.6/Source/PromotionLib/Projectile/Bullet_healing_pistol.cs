@@ -1,6 +1,4 @@
-﻿using PromotionLib.RwBioUI.MonoComp;
-using PromotionLib.RwBioUI.UIMap;
-using RimWorld;
+﻿using RimWorld;
 using System.Linq;
 using UnityEngine;
 using Verse;
@@ -184,16 +182,6 @@ namespace PromotionLib.Projectile
                 float q = Rand.Range(cfgTendQualityMin, cfgTendQualityMax); // ← 配置化
                 q = Mathf.Clamp01(q);
                 h.Tended(q, 1f);
-            }
-
-            var prefab = effMapData.eff["hpadd"] as GameObject;
-            if (prefab != null)
-            {
-                GameObject go = UnityEngine.Object.Instantiate(prefab, new Vector2(-9999, -9999), Quaternion.identity);
-                var fp = go.AddComponent<forpawn>();
-                fp.pawn = targetPawn;
-                go.SetActive(true);
-                UnityEngine.Object.Destroy(go, 2f);
             }
         }
 
