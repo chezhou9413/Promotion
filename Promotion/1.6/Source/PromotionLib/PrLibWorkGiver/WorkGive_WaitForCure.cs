@@ -16,6 +16,11 @@ namespace PromotionLib.PrLibWorkGiver
             {
                 return null;
             }
+            if (pawn.CurJobDef == WaitForCure) return null;
+            if (pawn.health.hediffSet.HasHediff(PrLibDefOf.PrLibHediffDefOf.PRON_Antibiotic))
+            {
+                return null;
+            }
             if (!FindPawnIsInfectionVirus(pawn))
             {
                 return null;
@@ -29,7 +34,7 @@ namespace PromotionLib.PrLibWorkGiver
             {
                 return null;
             }
-            Building_Bed bed = FindBestMedicalBed(pawn);
+            Building_Bed bed = RestUtility.FindPatientBedFor(pawn);
             if (bed == null)
             {
                 bed = RestUtility.FindBedFor(pawn);
@@ -41,48 +46,6 @@ namespace PromotionLib.PrLibWorkGiver
 
             Job job = JobMaker.MakeJob(WaitForCure, bed);
             return job;
-        }
-
-       
-        private Building_Bed FindBestMedicalBed(Pawn pawn)
-        {
-            Thing foundThing = GenClosest.ClosestThingReachable(
-                pawn.Position,
-                pawn.Map,
-                ThingRequest.ForGroup(ThingRequestGroup.BuildingArtificial),
-                PathEndMode.OnCell,
-                TraverseParms.For(pawn),
-                9999f, // 搜索半径
-                (Thing t) => IsValidMedicalBed(t, pawn) 
-            );
-
-            return foundThing as Building_Bed;
-        }
-        private bool IsValidMedicalBed(Thing t, Pawn pawn)
-        {
-            if (t is Building_Bed bed)
-            {
-                if (!bed.Medical) return false;
-                if (bed.ForPrisoners != pawn.IsPrisoner) return false;
-                if (bed.IsForbidden(pawn)) return false;
-                if (bed.IsBurning()) return false;
-                bool isOwnedByMe = bed.OwnersForReading.Contains(pawn);
-                bool isOccupiedBySomeoneElse = false;
-                foreach (var occupant in bed.CurOccupants)
-                {
-                    if (occupant != pawn)
-                    {
-                        isOccupiedBySomeoneElse = true;
-                        break;
-                    }
-                }
-                if (!isOwnedByMe && isOccupiedBySomeoneElse) return false;
-
-                if (!pawn.CanReserve(bed)) return false;
-
-                return true;
-            }
-            return false;
         }
         private bool FindPawnIsInfectionVirus(Pawn patient)
         {

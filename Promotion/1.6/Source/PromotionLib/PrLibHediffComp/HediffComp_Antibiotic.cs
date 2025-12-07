@@ -22,7 +22,7 @@ namespace PromotionLib.PrLibHediffComp
         {
             this.cureLevel = drugProps.CureLeve;
             this.curePower = drugProps.CurePower;
-            this.ticksRemaining = drugProps.CureMaintainTick;
+            this.ticksRemaining = drugProps.CureMaintainTick; // 使用持续时间，而不是治疗时间
         }
 
         public override void CompPostTick(ref float severityAdjustment)
@@ -62,7 +62,29 @@ namespace PromotionLib.PrLibHediffComp
                     }
                 }
             }
+            if (pawn.IsHashIntervalTick(GenDate.TicksPerHour))
+            {
+                List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+                for (int i = hediffs.Count - 1; i >= 0; i--)
+                {
+                    Hediff hediff = hediffs[i];
+                    HediffComp_VirusStrainContainer hediffComp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                    if (hediffComp != null && hediffComp.virus != null)
+                    {
+                        if (hediffComp.strainProgress < 0.1)
+                        {
+                            float a = (1 - hediffComp.strainProgress * 10);
+                            if (Rand.Value < a)
+                            {
+                                pawn.health.RemoveHediff(hediff);
+                                Messages.Message($"{pawn.LabelShort} 的体内毒株已被清除。", pawn, MessageTypeDefOf.PositiveEvent);
+                            }
+                        }
+                    }
+                }
+            }
         }
+
 
         public override void CompExposeData()
         {

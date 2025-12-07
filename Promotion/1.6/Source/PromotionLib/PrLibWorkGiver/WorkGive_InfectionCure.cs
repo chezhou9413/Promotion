@@ -17,15 +17,11 @@ namespace PromotionLib.PrLibWorkGiver
         public override bool HasJobOnThing(Pawn worker, Thing t, bool forced = false)
         {
             Pawn patient = t as Pawn;
-
             if (patient == null || patient == worker) return false;
             if (!patient.InBed())
             {
                 return false;
             }
-            // ============================================
-
-            // 如果病人已经在使用抗生素，则不需要治疗
             if (patient.health.hediffSet.HasHediff(PrLibHediffDefOf.PRON_Antibiotic))
             {
                 return false;
