@@ -3,6 +3,7 @@ using RimWorld;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;
+using Verse.Noise;
 
 namespace PromotionLib.PrLibHediffComp
 {
@@ -76,6 +77,8 @@ namespace PromotionLib.PrLibHediffComp
                             float a = (1 - hediffComp.strainProgress * 10);
                             if (Rand.Value < a)
                             {
+                                HediffComp_ExtractVirus extractVirus = hediff.TryGetComp<HediffComp_ExtractVirus>();
+                                ActionExtractVirus(pawn.Position, extractVirus,pawn.Map);
                                 pawn.health.RemoveHediff(hediff);
                                 Messages.Message($"{pawn.LabelShort} 的体内毒株已被清除。", pawn, MessageTypeDefOf.PositiveEvent);
                             }
@@ -85,7 +88,30 @@ namespace PromotionLib.PrLibHediffComp
             }
         }
 
-
+        public Thing ActionExtractVirus(IntVec3 intVec3, HediffComp_ExtractVirus HediffComp_ExtractVirus,Map map)
+        {
+            if(HediffComp_ExtractVirus != null)
+            {
+                if(HediffComp_ExtractVirus.Props.ExtractVirusThingDef != null)
+                {
+                    Thing thing = ThingMaker.MakeThing(HediffComp_ExtractVirus.Props.ExtractVirusThingDef);
+                    thing.stackCount = 1;
+                    GenSpawn.Spawn(thing,intVec3, map);
+                    return thing;
+                }else if (HediffComp_ExtractVirus.Props.extractVirusPool != null)
+                {
+                    Thing thing = ThingMaker.MakeThing(HediffComp_ExtractVirus.Props.extractVirusPool.GetRandomVirus());
+                    thing.stackCount = 1;
+                    GenSpawn.Spawn(thing, intVec3, map);
+                    return thing;
+                }
+            }
+            else
+            {
+                return null;
+            }
+            return null;
+        }
         public override void CompExposeData()
         {
             base.CompExposeData();

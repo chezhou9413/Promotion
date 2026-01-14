@@ -1,0 +1,5195 @@
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PromotionLibMod.cs
+=
+
+using HarmonyLib;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using RimWorld;
+using Verse;
+
+namespace PromotionLib
+{
+    [StaticConstructorOnStartup]
+    public static class PromotionLibStartup
+    {
+        static Harmony harmony;
+
+        static PromotionLibStartup()
+        {
+            Log.Message("[PromotionLib] 游戏启动，开始初始化 Harmony 和添加组件");
+
+            harmony = new Harmony("PromotionLib.core");
+            harmony.PatchAll(typeof(PromotionLibStartup).Assembly);
+
+            // 调用添加组件到所有物品的函数
+            AddCompToAllItems();
+        }
+
+        public static void AddCompToAllItems()
+        {
+            // 遍历所有物品定义
+            foreach (ThingDef thingDef in DefDatabase<ThingDef>.AllDefs)
+            {
+                // 确保物品不是抽象的，并且属于物品类（包括武器）
+                if (!thingDef.thingClass.IsAbstract && thingDef.category == ThingCategory.Item)
+                {
+                    // 如果物品是装备，也应该检查它是否具有物品属性（包括武器）
+                    if (thingDef.comps == null)
+                        thingDef.comps = new List<CompProperties>();
+
+                    // 确保没有重复添加组件
+                    if (thingDef.comps.All(comp => comp.GetType() != typeof(VirusStrainComp)))
+                    {
+                        // 为物品或装备添加 VirusStrainComp 组件
+                        thingDef.comps.Add(new CompProperties_VirusStrain());
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\comp\BuildingStrainClearComp.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using PromotionLib.Utils;
+using RimWorld;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.comp
+{
+    public class BuildingStrainClearCompProperties : CompProperties
+    {
+        /// <summary>
+        /// 是否禁用空气传播
+        /// </summary>
+        public bool DisableAirborneTransmission = false;
+        /// <summary>
+        /// 是否禁用接触传播
+        /// </summary>
+        public bool isContactTransmissionEnabled = false;
+        /// <summary>
+        /// 是否禁用体液传播
+        /// </summary>
+        public bool isFluidTransmissionEnabled = false;
+        /// <summary>
+        /// 是否对范围内物品进行消毒
+        /// </summary>
+        public bool DisinfectItemsInRadius = false;
+        /// <summary>
+        /// 作用的范围效果
+        /// </summary>
+        public int effectRange = 20;
+        /// <summary>
+        /// 是否需要电力支持
+        /// </summary>
+        public bool requiresPower = false;
+        /// <summary>
+        /// 是否需要燃料支持
+        /// </summary>
+        public bool hasRes = true;
+        /// <summary>
+        /// 是否会被障碍阻挡
+        /// </summary>
+        public bool IsObstructed = false;
+        public BuildingStrainClearCompProperties()
+        {
+            this.compClass = typeof(BuildingStrainClearComp);
+        }
+    }
+    public class BuildingStrainClearComp : ThingComp
+    {
+        public BuildingStrainClearCompProperties Props => (BuildingStrainClearCompProperties)this.props;
+
+        private List<IntVec3> cachedVisibleCells = null;
+
+        private HashSet<Pawn> trackedPawns = new HashSet<Pawn>();
+
+        private int tick = 0;
+
+        public override void CompTick()
+        {
+            if (tick != 0)
+            {
+                tick--;
+                return;
+            }
+            if (Props.requiresPower)
+            {
+                CompPowerTrader powerComp = this.parent.TryGetComp<CompPowerTrader>();
+                if (powerComp != null)
+                {
+                    // PowerOn 是最终的判断属性，它综合了“是否连接到电网”和“电网是否有电”
+                    if (!powerComp.PowerOn)
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    Log.Error(this.parent + " 需要电力支持，但没有找到 CompPowerTrader 组件。");
+                }
+            }
+            if (Props.hasRes)
+            {
+                CompRefuelable refuelableComp = this.parent.TryGetComp<CompRefuelable>();
+                if (refuelableComp != null)
+                {
+                    if (!refuelableComp.HasFuel)
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    Log.Error(this.parent + " 需要燃料支持，但没有找到 CompRefuelable 组件。");
+                }
+            }
+            if (Props.IsObstructed)
+            {
+                this.cachedVisibleCells = new List<IntVec3>();
+                // 1. 获取半径内的所有格子
+                // GenRadial.RadialCellsAround(中心点, 半径, 是否使用圆形)
+                IEnumerable<IntVec3> allCellsInRange = GenRadial.RadialCellsAround(this.parent.Position, this.Props.effectRange, true);
+
+                // 2. 过滤出视线可达的格子
+                foreach (IntVec3 cell in allCellsInRange)
+                {
+                    // GenSight.LineOfSight(起点, 终点, 地图, 是否跳过起点)
+                    // 这个方法会模拟一条射线，如果中间没有障碍物则返回 true
+                    if (GenSight.LineOfSight(this.parent.Position, cell, this.parent.Map, skipFirstCell: true))
+                    {
+                        cachedVisibleCells.Add(cell);
+                    }
+                }
+            }
+            else
+            {
+                this.cachedVisibleCells = GenRadial.RadialCellsAround(this.parent.Position, this.Props.effectRange, true).ToList();
+            }
+            if (cachedVisibleCells != null)
+            {
+                setPawnVirusDisableForObstructed();
+                DisinfectItems();
+            }
+            tick = 120;
+            base.CompTick();
+        }
+        public override void PostDrawExtraSelectionOverlays()
+        {
+            base.PostDrawExtraSelectionOverlays();
+
+            if (parent.Spawned)
+            {
+                if (Props.IsObstructed)
+                {
+                    if (cachedVisibleCells != null)
+                    {
+                        GenDraw.DrawFieldEdges(this.cachedVisibleCells, Color.green);
+                    }
+                }
+                else
+                {
+                    // 1. 定义你想要的颜色
+                    Color ringColor = Color.green;
+                    GenDraw.DrawRadiusRing(this.parent.Position, Props.effectRange, ringColor);
+                }
+            }
+        }
+        public void DisinfectItems()
+        {
+            if (Props.DisinfectItemsInRadius) {
+                HashSet<Thing> results = new HashSet<Thing>();
+                // 遍历所有可见的格子
+                // (注意: cachedVisibleCells 必须在别处被正确更新，例如 CompTickRare 或 PostDrawExtraSelectionOverlays)
+                if (cachedVisibleCells != null)
+                {
+                    foreach (IntVec3 cell in cachedVisibleCells)
+                    {
+                        // 获取格子上的所有物品
+                        List<Thing> thingsOnCell = this.parent.Map.thingGrid.ThingsListAt(cell);
+                        if (thingsOnCell.Count > 0)
+                        {
+                            // 将它们全部加入到结果集中
+                            foreach (Thing t in thingsOnCell)
+                            {
+                                results.Add(t);
+                            }
+                        }
+                    }
+                }
+                foreach (Thing t in results)
+                {
+                    VirusStrainComp comp = t.TryGetComp<VirusStrainComp>();
+                    if (comp != null && comp.VirusStrain.Count > 0)
+                    {
+                        comp.VirusStrain.Clear();
+                    }
+                }
+            }
+        }
+        public void setPawnVirusDisableForObstructed()
+        {
+            // 1. 获取当前区域内的所有 Pawn，这部分逻辑和原来一样
+            HashSet<Thing> results = new HashSet<Thing>();
+            // 遍历所有可见的格子
+            // (注意: cachedVisibleCells 必须在别处被正确更新，例如 CompTickRare 或 PostDrawExtraSelectionOverlays)
+            if (cachedVisibleCells != null)
+            {
+                foreach (IntVec3 cell in cachedVisibleCells)
+                {
+                    // 获取格子上的所有物品
+                    List<Thing> thingsOnCell = this.parent.Map.thingGrid.ThingsListAt(cell);
+                    if (thingsOnCell.Count > 0)
+                    {
+                        // 将它们全部加入到结果集中
+                        foreach (Thing t in thingsOnCell)
+                        {
+                            results.Add(t);
+                        }
+                    }
+                }
+            }
+            // 从所有物品中筛选出 Pawn，得到“当前状态”
+            HashSet<Pawn> currentPawnsInArea = results.OfType<Pawn>().ToHashSet();
+
+            // 2. 找出【离开】的 Pawn
+            // 他们存在于“旧的追踪列表(trackedPawns)”中，但不存在于“当前状态”中
+            var pawnsThatLeft = trackedPawns.Except(currentPawnsInArea).ToList();
+            foreach (var pawn in pawnsThatLeft)
+            {
+
+                setPawnVirusFalse(pawn);
+            }
+
+            // 3. 找出【新进入】的 Pawn
+            // 他们存在于“当前状态”中，但不存在于“旧的追踪列表(trackedPawns)”中
+            var pawnsThatEntered = currentPawnsInArea.Except(trackedPawns).ToList();
+            foreach (var pawn in pawnsThatEntered)
+            {
+
+                setPawnVirus(pawn);
+            }
+
+            // 4. 最后，用“当前状态”更新追踪列表，为下一次检查做准备
+            // 这一步必须在所有比较完成之后执行
+            this.trackedPawns = currentPawnsInArea;
+        }
+
+        public void setPawnVirus(Pawn pawn)
+        {
+            if (Props.DisableAirborneTransmission)
+            {
+                List<HediffComp_VirusStrainContainer> hediffComps = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(pawn);
+                foreach (HediffComp_VirusStrainContainer hediffComp in hediffComps)
+                {
+                    hediffComp.DisableAirborneTransmission = true;
+                }
+            }
+            if (Props.isContactTransmissionEnabled)
+            {
+                List<HediffComp_VirusStrainContainer> hediffComps = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(pawn);
+                foreach (HediffComp_VirusStrainContainer hediffComp in hediffComps)
+                {
+                    hediffComp.isContactTransmissionEnabled = true;
+                }
+            }
+            if (Props.isFluidTransmissionEnabled)
+            {
+                List<HediffComp_VirusStrainContainer> hediffComps = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(pawn);
+                foreach (HediffComp_VirusStrainContainer hediffComp in hediffComps)
+                {
+                    hediffComp.isFluidTransmissionEnabled = true;
+                }
+            }
+        }
+
+        public void setPawnVirusFalse(Pawn pawn)
+        {
+            List<HediffComp_VirusStrainContainer> hediffComps = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(pawn);
+            foreach (HediffComp_VirusStrainContainer hediffComp in hediffComps)
+            {
+                hediffComp.DisableAirborneTransmission = false;
+                hediffComp.isContactTransmissionEnabled = false;
+                hediffComp.isFluidTransmissionEnabled = false;
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\comp\ComplicationComp.cs
+=
+.
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Verse;
+
+namespace PromotionLib
+{
+    public class ComplicationCompProperties : HediffCompProperties
+    {
+        public string type;
+        public string scope;
+        public int severityLevel = 1;
+
+        public ComplicationCompProperties()
+        {
+            this.compClass = typeof(ComplicationComp);
+        }
+    }
+
+    public class ComplicationComp : HediffComp
+    {
+        public Complication Complication { get; private set; }
+
+        public ComplicationCompProperties Props => (ComplicationCompProperties)this.props;
+
+        public override void CompPostMake()
+        {
+            base.CompPostMake();
+
+            Complication = new Complication
+            {
+                ComplicationType = Props.type,
+                TargetScope = Props.scope,
+                severityLevel = Props.severityLevel
+            };
+        }
+
+        public override void CompExposeData()
+        {
+            base.CompExposeData();
+
+            if (Scribe.mode == LoadSaveMode.Saving || Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                Scribe_Values.Look(ref Complication.severityLevel, "severityLevel", 1);
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\comp\CompProperties_DisableBodyType.cs
+=
+.
+﻿using HarmonyLib;
+using RimWorld;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib
+{
+    public class CompProperties_DisableBodyType : CompProperties
+    {
+        public CompProperties_DisableBodyType()
+        {
+            compClass = typeof(Comp_DisableBodyType);
+        }
+    }
+
+    public class Comp_DisableBodyType : ThingComp { }
+
+    /// <summary>
+    /// 完全接管 ApparelGraphicRecordGetter.TryGetGraphicApparel：
+    /// - 支持禁用体型后缀（Comp_DisableBodyType）
+    /// - 更稳的资源探测：优先 Multi（方向齐全），否则 Single（基底或任一分向）
+    /// - 在找不到时对“带/不带体型后缀”的路径做自动回退
+    /// - 找不到任何资源时安全返回 false，避免 MatFrom null
+    /// </summary>
+    [HarmonyPatch(typeof(ApparelGraphicRecordGetter), nameof(ApparelGraphicRecordGetter.TryGetGraphicApparel))]
+    public static class Patch_TryGetGraphicApparel
+    {
+        public static bool Prefix(Apparel apparel, BodyTypeDef bodyType, bool forStatue, ref ApparelGraphicRecord rec, ref bool __result)
+        {
+            // 1) 路径基础校验
+            if (apparel?.WornGraphicPath.NullOrEmpty() ?? true)
+            {
+                rec = new ApparelGraphicRecord(null, null);
+                __result = false;
+                return false; // 阻止原方法
+            }
+
+            // 2) 是否禁用体型后缀
+            bool disableBodyType = apparel.TryGetComp<Comp_DisableBodyType>() != null;
+
+            // 3) 计算初始 basePath（可能带体型后缀，具体取决于层级/是否背包/占位图等）
+            string computedPath = ComputeBasePath(apparel, bodyType, disableBodyType);
+
+            // 4) 生成候选路径（优先用 computedPath；如果是禁用体型但资源缺失，则回退尝试带体型；反之亦然）
+            //    注意：候选列表要去重，避免重复探测。
+            var candidates = new List<string>(2);
+            candidates.Add(computedPath);
+
+            string altPath = ComputeBasePath(apparel, bodyType, !disableBodyType);
+            if (!string.Equals(altPath, computedPath))
+                candidates.Add(altPath);
+
+            // 5) Shader 选择（保持你原有逻辑）
+            Shader shader = ShaderDatabase.Cutout;
+            if (!forStatue)
+            {
+                if (apparel.StyleDef?.graphicData?.shaderType != null)
+                {
+                    shader = apparel.StyleDef.graphicData.shaderType.Shader;
+                }
+                else if ((apparel.StyleDef == null && apparel.def.apparel.useWornGraphicMask) ||
+                         (apparel.StyleDef != null && apparel.StyleDef.UseWornGraphicMask))
+                {
+                    shader = ShaderDatabase.CutoutComplex;
+                }
+            }
+
+            // 6) 逐个候选路径进行资源探测与加载
+            foreach (var basePath in candidates)
+            {
+                // 探测是否有基底贴图（不带方向后缀）
+                bool hasBase = ContentFinder<Texture2D>.Get(basePath, false) != null;
+
+                // 探测分向贴图
+                bool hasSouth = ContentFinder<Texture2D>.Get(basePath + "_south", false) != null;
+                bool hasNorth = ContentFinder<Texture2D>.Get(basePath + "_north", false) != null;
+                bool hasEast = ContentFinder<Texture2D>.Get(basePath + "_east", false) != null;
+
+                Graphic graphic = null;
+
+                // 优先使用 Multi：至少 south + east 存在（或三向更好）
+                if ((hasSouth && hasEast) || (hasSouth && hasNorth && hasEast))
+                {
+                    graphic = GraphicDatabase.Get<Graphic_Multi>(
+                        basePath, shader, apparel.def.graphicData.drawSize, apparel.DrawColor);
+                }
+                else if (hasBase)
+                {
+                    // 有基底 → Single(basePath)
+                    graphic = GraphicDatabase.Get<Graphic_Single>(
+                        basePath, shader, apparel.def.graphicData.drawSize, apparel.DrawColor);
+                }
+                else if (hasSouth || hasEast || hasNorth)
+                {
+                    // 没有基底，但有任一分向 → 用已有的分向路径精确加载 Single
+                    string fallback = hasSouth ? basePath + "_south" : (hasEast ? basePath + "_east" : basePath + "_north");
+                    graphic = GraphicDatabase.Get<Graphic_Single>(
+                        fallback, shader, apparel.def.graphicData.drawSize, apparel.DrawColor);
+                }
+
+                if (graphic != null)
+                {
+                    rec = new ApparelGraphicRecord(graphic, apparel);
+                    __result = true;
+                    return false; // 阻止原方法，成功
+                }
+            }
+
+            // 7) 到这里说明所有候选都失败了 —— 安全返回 false，并给出一次性 Warning，便于定位问题
+            Log.Warning($"[PromotionLib] Apparel graphic not found for '{apparel.LabelCap ?? apparel.def?.defName}'. " +
+                        $"Tried paths: {string.Join(", ", candidates)} (base / _south / _east / _north). " +
+                        $"Check bodyType suffix & resource files.");
+            rec = new ApparelGraphicRecord(null, null);
+            __result = false;
+            return false;
+        }
+
+        /// <summary>
+        /// 计算最终用于加载的 basePath（可能带体型后缀）。
+        /// 逻辑与原版一致：只有在非头部/非眼部/非背包/非占位图时才考虑体型后缀。
+        /// 当 disableBodyType = true 时强制不加体型后缀。
+        /// </summary>
+        private static string ComputeBasePath(Apparel apparel, BodyTypeDef bodyType, bool disableBodyType)
+        {
+            string basePath = apparel.WornGraphicPath;
+
+            bool shouldAppendBodyType =
+                !disableBodyType &&
+                apparel.def?.apparel?.LastLayer != ApparelLayerDefOf.Overhead &&
+                apparel.def?.apparel?.LastLayer != ApparelLayerDefOf.EyeCover &&
+                !apparel.RenderAsPack() &&
+                basePath != BaseContent.PlaceholderImagePath &&
+                basePath != BaseContent.PlaceholderGearImagePath;
+
+            if (shouldAppendBodyType && bodyType != null)
+            {
+                basePath = basePath + "_" + bodyType.defName;
+            }
+
+            return basePath;
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\comp\VirusStrainComp.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using System.Collections.Generic;
+using System.Linq;
+using Verse;
+
+namespace PromotionLib
+{
+
+    public class CompProperties_VirusStrain : CompProperties
+    {
+        public CompProperties_VirusStrain()
+        {
+            this.compClass = typeof(VirusStrainComp); // 设置 VirusStrainComp 作为组件
+        }
+    }
+    public class VirusStrainComp : ThingComp
+    {
+        // 存储病毒毒株对象
+        public List<HediffComp_VirusStrainContainer> VirusStrain = new List<HediffComp_VirusStrainContainer>();
+
+        /// <summary>
+        /// 初始化时检查并设置 VirusStrain 对象
+        /// </summary>
+        public override void Initialize(CompProperties props)
+        {
+            base.Initialize(props);
+        }
+
+        /// <summary>
+        ///给物品毒株组件增加毒株
+        /// </summary>
+        public void AddVirusStrain(HediffComp_VirusStrainContainer newVirusStrain)
+        {
+            if (newVirusStrain?.virus == null)
+            {
+                return;
+            }
+            // 去重：通过病毒 UniqueID 避免重复添加
+            string uid = newVirusStrain.virus.UniqueID;
+            if (!string.IsNullOrEmpty(uid))
+            {
+                foreach (var existing in VirusStrain)
+                {
+                    if (existing?.virus != null && existing.virus.UniqueID == uid)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            // 深拷贝：不直接保存外部 HediffComp 引用，创建一个新的容器并拷贝病毒
+            var clonedContainer = new HediffComp_VirusStrainContainer
+            {
+                DisableAirborneTransmission = newVirusStrain.DisableAirborneTransmission,
+                isContactTransmissionEnabled = newVirusStrain.isContactTransmissionEnabled,
+                isFluidTransmissionEnabled = newVirusStrain.isFluidTransmissionEnabled,
+            };
+            clonedContainer.SetVirusDirectly(newVirusStrain.virus.Clone());
+            VirusStrain.Add(clonedContainer);
+        }
+
+        /// <summary>
+        ///给物品毒株组件增加毒株集合
+        /// </summary>
+        public void AddVirusStrainList(List<HediffComp_VirusStrainContainer> newVirusStrain)
+        {
+            if (newVirusStrain == null)
+            {
+                return;
+            }
+            foreach (HediffComp_VirusStrainContainer strain in newVirusStrain)
+            {
+                if (strain?.virus == null)
+                {
+                    continue;
+                }
+                if (strain.isContactTransmissionEnabled)
+                {
+                    continue;
+                }
+                // 以表面携带率作为附着概率
+                if (Rand.Value < (strain.virus.SurfacePersistence / 100f))
+                {
+                    // 使用单个添加方法（内部会深拷贝并去重）
+                    AddVirusStrain(strain);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 获取病毒毒株的描述信息（可以用于调试或展示）
+        /// </summary>
+        public string GetVirusStrainDescription()
+        {
+            string msg= "包含的病毒毒株：\n";
+            foreach (HediffComp_VirusStrainContainer strain in VirusStrain)
+            {
+                msg += "毒株名称："+strain.virus.StrainName+" "+"毒株ID:"+strain.virus.UniqueID + "\n";
+            }
+            return msg;
+        }
+
+        /// <summary>
+        /// 用于序列化 VirusStrain 数据，确保它在存档时被保存
+        /// </summary>
+        public override void PostExposeData()
+        {
+            base.PostExposeData();  // 调用父类的序列化逻辑
+            Scribe_Collections.Look(ref VirusStrain, "virusStrain", LookMode.Deep);  // 将 VirusStrain 对象序列化，使用 Deep 模式
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Core\ComplicationHediff.cs
+=
+.
+﻿using RimWorld;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib
+{
+    public class ComplicationHediff : HediffWithComps
+    {
+        private bool messageSent = false;
+
+        public override void Tick()
+        {
+            base.Tick();
+
+            // 自动在 severity 降到 0.01 以下时移除
+            if (this.Severity <= 0.01f)
+            {
+                pawn.health.RemoveHediff(this);
+            }
+        }
+        public override string Label
+        {
+            get
+            {
+                var comp = this.TryGetComp<ComplicationComp>();
+                if (comp != null)
+                {
+                    string compType = comp.Complication.ComplicationType;
+                    string baseLabel = base.Label;
+                    if (Prefs.DevMode)
+                    {
+                        if (compType == "GenericComplication" || compType == "SignatureComplication" || compType == "NeuroSignatureComplication")
+                            return $"{baseLabel} 严重等级: {comp.Complication.severityLevel} 进展程度: {this.Severity}";
+                        else if (compType == "AbilityComplication" || compType == "EvolutionComplication")
+                            return $"{baseLabel} 强化等级: {comp.Complication.severityLevel}";
+                    }
+                    else
+                    {
+                        if (compType == "GenericComplication" || compType == "SignatureComplication" || compType == "NeuroSignatureComplication")
+                            return $"{baseLabel} 严重等级: {comp.Complication.severityLevel}";
+                        else if (compType == "AbilityComplication" || compType == "EvolutionComplication")
+                            return $"{baseLabel} 强化等级: {comp.Complication.severityLevel}";
+                    }
+                }
+                return base.Label;
+            }
+        }
+
+        public override Color LabelColor
+        {
+            get
+            {
+                var comp = this.TryGetComp<ComplicationComp>();
+                if (comp != null && comp.Complication != null)
+                {
+                    string type = comp.Complication.ComplicationType;
+
+                    if (type == "GenericComplication") return new Color(0.6f, 0.6f, 0.6f);
+                    if (type == "SignatureComplication") return new Color(0.8f, 0.1f, 0.1f);
+                    if (type == "NeuroSignatureComplication") return new Color(0.6f, 0.3f, 1f);
+                    if (type == "AbilityComplication") return new Color(0.2f, 0.6f, 1f);
+                    if (type == "EvolutionComplication") return new Color(1f, 0.85f, 0.3f);
+                }
+                return base.LabelColor;
+            }
+        }
+
+        public override void PostMake()
+        {
+            base.PostMake();
+            // 不再需要运行时修改 def.stages
+        }
+
+        public void sendmessage(string type)
+        {
+            if (messageSent) return;
+
+            // 只通知玩家殖民地的小人
+            if (pawn.Faction != Faction.OfPlayer) return;
+
+            messageSent = true;
+
+            string title = "症状通知";
+            string body = "";
+            LetterDef letterDef = LetterDefOf.NeutralEvent;
+
+            if (type == "GenericComplication")
+            {
+                letterDef = LetterDefOf.NegativeEvent;
+                body = $"{pawn.LabelShortCap} 被诊断为轻度并发症：{this.Label}，当前无需紧急干预。";
+            }
+            else if (type == "SignatureComplication")
+            {
+                letterDef = LetterDefOf.ThreatSmall;
+                body = $"{pawn.LabelShortCap} 被确诊为明显症状：{this.Label}，需要密切观察和治疗。";
+            }
+            else if (type == "NeuroSignatureComplication")
+            {
+                letterDef = LetterDefOf.ThreatSmall;
+                body = $"{pawn.LabelShortCap} 出现神经类并发症：{this.Label}，可能影响其精神与意识。";
+            }
+            else if (type == "AbilityComplication")
+            {
+                letterDef = LetterDefOf.PositiveEvent;
+                body = $"{pawn.LabelShortCap} 的神经系统异常激活，表现出反常的能力提升（{this.Label}）。";
+            }
+            else if (type == "EvolutionComplication")
+            {
+                letterDef = LetterDefOf.PositiveEvent;
+                body = $"{pawn.LabelShortCap} 身体机能得以升华（{this.Label}）。";
+            }
+
+            if (!body.NullOrEmpty())
+            {
+                Find.LetterStack.ReceiveLetter(title, body, letterDef, pawn);
+            }
+        }
+
+
+        public override void PostAdd(DamageInfo? dinfo)
+        {
+            base.PostAdd(dinfo);
+
+            var comp = this.TryGetComp<ComplicationComp>();
+            if (comp == null) return;
+
+            string compType = comp.Complication.ComplicationType;
+            sendmessage(compType);
+
+            string targetScope = comp.Props.scope?.ToLowerInvariant();
+
+            var existing = pawn.health.hediffSet.hediffs
+                .Where(h => h.def == this.def && h != this)
+                .ToList();
+
+            if (targetScope == "wholebody")
+            {
+                if (existing.Any(h => h.Part == null))
+                {
+                    pawn.health.RemoveHediff(this);
+                    return;
+                }
+                this.Part = null;
+            }
+            else if (targetScope == "bodypart")
+            {
+                var usedParts = existing.Select(h => h.Part).Where(p => p != null).ToHashSet();
+                var availableParts = pawn.health.hediffSet.GetNotMissingParts()
+                    .Where(part => !usedParts.Contains(part)).ToList();
+
+                if (availableParts.Any())
+                {
+                    this.Part = availableParts.RandomElement();
+                }
+                else
+                {
+                    pawn.health.RemoveHediff(this);
+                }
+            }
+        }
+
+        public override bool TendableNow(bool ignoreTimer = false)
+        {
+            var comp = this.TryGetComp<ComplicationComp>();
+            string compType = comp?.Complication?.ComplicationType;
+
+            if (compType == "AbilityComplication" || compType == "EvolutionComplication")
+                return false;
+
+            // 其余情况全部走原版逻辑，保证冷却机制生效
+            return base.TendableNow(ignoreTimer);
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Core\ComplicationSpawner.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using RimWorld;
+using System;
+using System.Collections.Generic;
+using Verse;
+
+namespace PromotionLib
+{
+    public class ComplicationSpawner : MapComponent
+    {
+        // 为每个 Pawn 维护独立 tick 计数器
+        private Dictionary<Pawn, int> pawnTickCounters = new Dictionary<Pawn, int>();
+
+        public ComplicationSpawner(Map map) : base(map)
+        {
+        }
+        //通用并发症
+        private List<Hediff> GenericComplicationList = new List<Hediff>();
+        //特征并发症
+        private List<Hediff> SignatureComplication = new List<Hediff>();
+        private List<string> symptoms = new List<string>();
+        private HediffDef hediffDef = new HediffDef();
+        private ComplicationComp complicationComp;
+        private List<Hediff> toAdd = new List<Hediff>();
+
+        public override void MapComponentTick()
+        {
+            foreach (Pawn pawn in map.mapPawns.AllPawns)
+            {
+                if (!pawn.Spawned || pawn.Dead) continue;
+
+                // 初始化 Pawn 的计数器
+                if (!pawnTickCounters.ContainsKey(pawn))
+                {
+                    pawnTickCounters[pawn] = 0;
+                }
+
+                pawnTickCounters[pawn]++;
+                //15000
+                if (pawnTickCounters[pawn] >= 1000) // 每 6 小时
+                {
+                    pawnTickCounters[pawn] = 0;
+                    HandleComplication(pawn);
+                }
+            }
+
+            // 清理已死亡或被移除的 Pawn
+            pawnTickCounters.RemoveAll(pair => pair.Key == null || pair.Key.Dead || pair.Key.Discarded);
+        }
+
+        private void HandleComplication(Pawn pawn)
+        {
+            toAdd.Clear();
+            List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+            foreach (Hediff h in hediffs)
+            {
+                HediffComp_VirusStrainContainer hediffComp = h.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (hediffComp != null && hediffComp.virus != null)
+                {
+                    GenericComplicationList.Clear();
+                    SignatureComplication.Clear();
+                    symptoms = hediffComp.virus.Symptoms;
+                    classifyComplications(symptoms, pawn);
+
+                    float baseProbability = GetBaseProbability(hediffComp.virus.Pathogenicity);
+                    float ageFactor = GetAgeFactor(pawn);
+                    float temperatureFactor = CalculateTemperatureImpact(
+                        pawn.Position.GetTemperature(pawn.Map),
+                        hediffComp.virus.MinAdaptedTemperature,
+                        hediffComp.virus.MaxAdaptedTemperature);
+                    float infectionFactor = GetInfectionImpact(hediffComp.strainProgress);
+
+                    bool isInfected = ShouldInfect(baseProbability, ageFactor, temperatureFactor, infectionFactor, pawn.LabelShort);
+
+                    if (isInfected)
+                    {
+                        Hediff hediff = null;
+                        if (!hediffComp.IncubationPeriod)
+                        {
+                            hediff = GenericComplicationList.RandomElementWithFallback(null);
+                        }
+                        else
+                        {
+                            hediff = SignatureComplication.RandomElementWithFallback(null);
+                        }
+
+                        if (hediff != null)
+                        {
+                            toAdd.Add(hediff); // ✅ 不在循环中添加，先存到临时表
+                        }
+                    }
+                }
+            }
+            foreach (var h in toAdd)
+            {
+                pawn.health.AddHediff(h);
+            }
+
+        }
+
+
+        /// <summary>
+        /// 用于分类并发症的函数。
+        /// </summary>
+        /// <param name="strings">需要分类的并发症字符串列表。</param>
+        public void classifyComplications(List<string> strings, Pawn pawn)
+        {
+            foreach (string s in strings)
+            {
+                hediffDef = DefDatabase<HediffDef>.GetNamed(s);
+                Hediff hediff = HediffMaker.MakeHediff(hediffDef, pawn);
+                complicationComp = hediff.TryGetComp<ComplicationComp>();
+                if (complicationComp != null)
+                {
+                    if (complicationComp.Complication.ComplicationType == "GenericComplication")
+                    {
+                        GenericComplicationList.Add(hediff);
+                    }
+                    else if (complicationComp.Complication.ComplicationType == "SignatureComplication" || complicationComp.Complication.ComplicationType == "NeuroSignatureComplication" || complicationComp.Complication.ComplicationType == "AbilityComplication" || complicationComp.Complication.ComplicationType == "EvolutionComplication")
+                    {
+                        SignatureComplication.Add(hediff);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 根据当前温度与小人的适应温度范围，计算温度影响因子。
+        /// 温度影响因子 = max(0.1, 1.0 - 温度偏差 * 0.05)
+        /// </summary>
+        /// <param name="currentTemp">当前小人所处环境温度</param>
+        /// <param name="minComfortTemp">毒株能适应的最小温度</param>
+        /// <param name="maxComfortTemp">毒株能适应的最大温度</param>
+        /// <returns>返回 0.1 到 1.0 之间的温度影响因子，越低表示越不适应</returns>
+        public static float CalculateTemperatureImpact(float currentTemp, float minComfortTemp, float maxComfortTemp)
+        {
+            float deviation = 0f;
+
+            // 如果当前温度低于适应范围，则计算与最小适温的偏差
+            if (currentTemp < minComfortTemp)
+            {
+                deviation = minComfortTemp - currentTemp;
+            }
+            // 如果当前温度高于适应范围，则计算与最大适温的偏差
+            else if (currentTemp > maxComfortTemp)
+            {
+                deviation = currentTemp - maxComfortTemp;
+            }
+
+            // 计算影响因子，并限定最小为 0.1（最差情况）
+            float impact = 1.0f - deviation * 0.05f;
+            return Math.Max(0.1f, impact);
+        }
+
+        /// <summary>
+        /// 根据小人的年龄阶段，返回一个对应的数值因子。
+        /// 幼年返回 1.1，成年返回 1.0，老年则根据年龄增加计算因子。
+        /// </summary>
+        /// <param name="pawn">需要计算的小人对象</param>
+        /// <returns>返回根据年龄阶段计算的因子</returns>
+        /// <summary>
+        /// 根据 Pawn（小人）的年龄阶段，返回影响因子：
+        /// - 幼年：返回 1.1
+        /// - 老年：返回 1.0 + 0.024 × (当前年龄 - 老年起始年龄)
+        /// - 其余阶段：返回 1.0
+        /// </summary>
+        /// <param name="pawn">小人（Pawn）对象</param>
+        /// <returns>年龄影响因子</returns>
+        public static float GetAgeFactor(Pawn pawn)
+        {
+            if (pawn == null || pawn.ageTracker == null || pawn.RaceProps == null)
+                return 1.0f;
+
+            float age = pawn.ageTracker.AgeBiologicalYearsFloat;
+
+            // 当前生命周期阶段
+            LifeStageDef curStage = pawn.ageTracker.CurLifeStage;
+
+            // 幼年判断：如果当前阶段名称中包含 "child"
+            if (curStage != null && curStage.defName.ToLower().Contains("child"))
+            {
+                return 1.1f;
+            }
+
+            // 查找“Elder”阶段的最小年龄
+            float elderAge = 45f; // 默认老年起始年龄
+            var lifeStages = pawn.RaceProps.lifeStageAges;
+
+            for (int i = lifeStages.Count - 1; i >= 0; i--)
+            {
+                var stage = lifeStages[i];
+                if (stage.def.defName.ToLower().Contains("elder"))
+                {
+                    elderAge = stage.minAge;
+                    break;
+                }
+            }
+
+            // 如果小人年龄大于等于老年起始年龄，计算公式
+            if (age >= elderAge)
+            {
+                float delta = age - elderAge;
+                return 1.0f + 0.024f * delta;
+            }
+
+            // 默认中青年阶段返回 1.0
+            return 1.0f;
+        }
+
+        /// <summary>
+        /// 根据传入的感染程度（0 ~ 1）计算感染度影响因子。
+        /// </summary>
+        /// <param name="severity">感染程度（0 到 1 之间）</param>
+        /// <returns>返回感染度影响因子</returns>
+        public static float GetInfectionImpact(float severity)
+        {
+            if (severity < 0f)
+                severity = 0f;
+            else if (severity > 1f)
+                severity = 1f;
+
+            if (severity < 0.35f)
+            {
+                return 1.0f;
+            }
+            else if (severity < 0.85f)
+            {
+                return 1.0f + 5.0f * (severity - 0.35f);
+            }
+            else // severity in [0.85, 1.0]
+            {
+                return 3.5f + (2.0f / 3.0f) * (severity - 0.85f);
+            }
+        }
+
+        /// <summary>
+        /// 根据传入的致病率（百分比 0~100），计算基础概率（为致病率的 1/5）。
+        /// 输入致病率应为 0~100 之间的整数或浮点数。
+        /// </summary>
+        /// <param name="pathogenicityPercent">致病率百分比（如 10 表示 10%）</param>
+        /// <returns>返回基础概率（小数形式，如 0.04 表示 4%）</returns>
+        public static float GetBaseProbability(float pathogenicityPercent)
+        {
+            // 限定输入范围为 0 ~ 100
+            if (pathogenicityPercent < 0f)
+                pathogenicityPercent = 0f;
+            else if (pathogenicityPercent > 100f)
+                pathogenicityPercent = 100f;
+
+            // 百分比转为 0~1 小数，并计算基础概率
+            float pathogenicity = pathogenicityPercent / 100f;
+            return pathogenicity / 1.5f;
+        }
+        /// <summary>
+        /// 根据各因子计算最终感染概率，并判断是否感染。
+        /// </summary>
+        /// <param name="baseProbability">基础概率（如 0.05 = 5%）</param>
+        /// <param name="ageFactor">年龄影响因子</param>
+        /// <param name="temperatureFactor">温度影响因子（将被 /2）</param>
+        /// <param name="infectionFactor">感染度影响因子</param>
+        /// <param name="debugLabel">调试标签（小人名等）</param>
+        /// <returns>是否感染（true=感染，false=未感染）</returns>
+        public static bool ShouldInfect(
+     float baseProbability,
+     float ageFactor,
+     float temperatureFactor,
+     float infectionFactor,
+     string debugLabel = "未知小人")
+        {
+            // 计算最终概率
+            float adjustedTempFactor = (temperatureFactor+2) / 2.0f;
+            float finalChance = baseProbability * ageFactor * adjustedTempFactor * infectionFactor;
+
+            // 生成 0~1 随机数
+            float roll = Rand.Value;
+
+            return roll < finalChance;
+        }
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Collections.Look(ref pawnTickCounters, "pawnTickCounters", LookMode.Reference, LookMode.Value);
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Core\IncubationController.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using RimWorld;
+using System.Collections.Generic;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib
+{
+    public class IncubationController : MapComponent
+    {
+        public IncubationController(Map map) : base(map)
+        {
+        }
+
+        public override void MapComponentTick()
+        {
+            foreach (Pawn pawn in map.mapPawns.AllPawns)
+            {
+                if (!pawn.Spawned)
+                    continue;
+
+                List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+                foreach (Hediff hediff in hediffs)
+                {
+                    HediffComp_VirusStrainContainer hediffComp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+
+                    if (hediffComp != null && hediffComp.virus != null)
+                    {
+                        // 每tick减少潜伏期计时，限制最小为 -1
+                        hediffComp.IncubationPeriodtick = Mathf.Max(-1, hediffComp.IncubationPeriodtick - 1);
+                        
+                        // 潜伏期结束触发一次性提示（在设置标志之前检查）
+                        if (hediffComp.IncubationPeriodtick < 0 && hediffComp.IncubationPeriod == false && pawn.Faction != null && pawn.Faction == Faction.OfPlayer)
+                        {
+                            // 发送确诊通知
+                            Find.LetterStack.ReceiveLetter(
+                            "毒株确诊通知", // 信件标题
+                            $"{pawn.LabelShortCap} 被确诊感染了毒株型号为 {hediffComp.virus.StrainName}（Ves: {hediffComp.virus.StrainVersion}）的症状，请注意观察与处理！", // 正文内容
+                            LetterDefOf.ThreatSmall, // 警告等级（黄色 + 警告音效）
+                            pawn                     // 跳转目标（点击信件后聚焦角色）
+                            );
+                            // 设置潜伏期结束标志，防止重复发送通知
+                            hediffComp.IncubationPeriod = true;
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Core\riwbioHediff.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib
+{
+    public class riwbioHediff : HediffWithComps
+    {
+        public override string Label
+        {
+            get
+            {
+                var comp = this.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (Prefs.DevMode)
+                {
+                    return $"[毒株感染] {comp.virus.StrainName} {(comp.strainProgress * 100):F2} 潜伏期剩余时间：{comp.IncubationPeriodtick} 是否是潜伏期：{!comp.IncubationPeriod}";
+                }
+                else if (comp != null)
+                {
+                    return $"[毒株感染] {comp.virus.StrainName} {(comp.strainProgress * 100):F2}%";
+                }
+
+                return "未知病毒";
+            }
+        }
+
+        public override bool Visible
+        {
+            get
+            {
+                // 获取你自定义的 comp（比如病毒进度容器）
+                var comp = this.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (Prefs.DevMode)
+                {
+                    return true; // 开发者模式下显示所有组件
+                }else if (comp != null)
+                {
+                    return comp.IncubationPeriodtick < 1;
+                }
+
+                // 没有组件时默认不显示
+                return false;
+            }
+        }
+
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Core\VirusInfectivityController.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using System.Collections.Generic;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib
+{
+    public class VirusInfectivityController : MapComponent
+    {
+        public VirusInfectivityController(Map map) : base(map)
+        {
+        }
+
+        public override void MapComponentTick()
+        {
+            List<Pawn> pawns = map.mapPawns.AllPawns;
+            for (int i = 0; i < pawns.Count; i++)
+            {
+                Pawn pawn = pawns[i];
+                if (pawn.DestroyedOrNull() || pawn.Dead) continue;
+                if (pawn.IsHashIntervalTick(250))
+                {
+                    HandlePawnInfectivity(pawn);
+                }
+            }
+        }
+
+        private void HandlePawnInfectivity(Pawn pawn)
+        {
+            List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+            foreach (Hediff hediff in hediffs)
+            {
+                HediffComp_VirusStrainContainer comp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (comp != null && comp.virus != null)
+                {
+                    float increment = (comp.virus.AntigenStrength / 2f) / 100f;
+                    comp.strainProgress = Mathf.Min(comp.strainProgress + increment, 1f);
+                }
+            }
+        }
+        public override void ExposeData()
+        {
+            base.ExposeData();
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\dev\heidffTest.cs
+=
+.
+﻿using LudeonTK;
+using RimWorld;
+using Verse;
+
+namespace PromotionLib
+{
+    [StaticConstructorOnStartup]
+    public static class heidffTest
+    {
+        /// <summary>
+        /// Dev 模式按钮：添加五种并发症
+        /// </summary>
+        [DebugAction("PromotionLib", "添加全部测试并发症", allowedGameStates = AllowedGameStates.PlayingOnMap)]
+        public static void AddAllComplicationsToPawn()
+        {
+            // 注册一个等待点击后的回调
+            DebugTools.curTool = new DebugTool("点击一个角色添加并发症", delegate
+            {
+                // 获取点击位置的实体
+                Pawn pawn = UI.MouseCell().GetFirstPawn(Find.CurrentMap);
+                if (pawn == null)
+                {
+                    Messages.Message("未点击到任何 Pawn。", MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+
+                ApplyAllTestComplications(pawn);
+                Messages.Message($"已为 {pawn.LabelShort} 添加全部测试并发症。", pawn, MessageTypeDefOf.PositiveEvent);
+            });
+        }
+
+
+        /// <summary>
+        /// 实际逻辑：将五种测试用并发症添加到 Pawn
+        /// </summary>
+        private static void ApplyAllTestComplications(Pawn pawn)
+        {
+            if (pawn == null || !pawn.Spawned) return;
+
+            string[] defNames = new string[]
+            {
+                "RimBio_Complication_Fatigue",
+                "RimBio_Complication_SkinRash",
+                "RimBio_Complication_CognitiveDecline",
+                "RimBio_Complication_ReflexBoost",
+                "RimBio_Complication_BodyReinforcement"
+            };
+
+            foreach (string defName in defNames)
+            {
+                HediffDef def = DefDatabase<HediffDef>.GetNamedSilentFail(defName);
+                if (def == null)
+                {
+                    Log.Warning($"[RimBio Debug] 未找到 HediffDef：{defName}");
+                    continue;
+                }
+
+                // 避免重复添加
+                if (pawn.health.hediffSet.HasHediff(def)) continue;
+
+                Hediff hediff = HediffMaker.MakeHediff(def, pawn);
+                hediff.Severity = 0.1f;
+                pawn.health.AddHediff(hediff);
+            }
+
+            Log.Message($"[RimBio Debug] 添加测试并发症至 {pawn.LabelShort} 完成。");
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\dev\VirusStrainTest.cs
+=
+.
+﻿using LudeonTK;
+using PromotionLib.PrLibHediffComp;
+using RimWorld;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Verse;
+
+namespace PromotionLib.dev
+{
+
+    [StaticConstructorOnStartup]
+    public static class VirusStrainTest
+    {
+        [DebugAction("PromotionLib", "检测一个物品是否有携带毒株", allowedGameStates = AllowedGameStates.PlayingOnMap)]
+        public static void CheckThingVirus()
+        {
+            DebugTools.curTool = new DebugTool("点击一个物品进行检测", delegate
+            {
+                Map map = Find.CurrentMap;
+                IntVec3 cell = UI.MouseCell();
+                List<Thing> things = cell.GetThingList(map);
+                if (things == null || things.Count == 0)
+                {
+                    Messages.Message("未点击到任何物品。", MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+
+                // 选取“最上面”的那个（列表末尾通常是可见顶部）
+                Thing thing = things[things.Count - 1];
+
+                // 举例：读取你的 Comp 并提示
+                VirusStrainComp comp = thing.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                {
+                    Messages.Message("该物品没有 VirusStrainComp。", MessageTypeDefOf.NeutralEvent, false);
+                    return;
+                }
+
+                Messages.Message("检测到物品:" + comp.GetVirusStrainDescription(), MessageTypeDefOf.NeutralEvent, false);
+                // TODO: 在这里调用你的检测逻辑
+            });
+        }
+
+
+        [DebugAction("PromotionLib", "给一个格子的物品的物品添加测试毒株", allowedGameStates = AllowedGameStates.PlayingOnMap)]
+        public static void addThingVirus()
+        {
+            DebugTools.curTool = new DebugTool("点击一个物品进行添加测试毒株", delegate
+            {
+                Map map = Find.CurrentMap;
+                IntVec3 cell = UI.MouseCell();
+                List<Thing> things = cell.GetThingList(map);
+                if (things == null || things.Count == 0)
+                {
+                    Messages.Message("未点击到任何物品。", MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+
+                // 选取"最上面"的那个（列表末尾通常是可见顶部）
+                Thing thing = things[things.Count - 1];
+
+                // 检查物品是否有VirusStrainComp组件
+                VirusStrainComp comp = thing.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                {
+                    Messages.Message("该物品没有 VirusStrainComp。", MessageTypeDefOf.NeutralEvent, false);
+                    return;
+                }
+
+                // 创建一个测试毒株
+                VirusStrain testStrain = new VirusStrain();
+                testStrain.StrainName = "测试毒株";
+                testStrain.UniqueID = "TEST001";
+                testStrain.Type = VirusCategory.PandemicVirus;
+                testStrain.Infectivity = 75;
+                testStrain.Pathogenicity = 60;
+                testStrain.AntigenStrength = 45f;
+                testStrain.AirSurvivability = 80;
+                testStrain.SurfacePersistence = 70;
+                testStrain.MutationRate = 15;
+                testStrain.MinIncubationPeriod = 1;
+                testStrain.MaxIncubationPeriod = 5;
+                testStrain.Symptoms = new List<string>();
+                testStrain.IsCultivated = true;
+                testStrain.MinAdaptedTemperature = 15f;
+                testStrain.MaxAdaptedTemperature = 35f;
+                testStrain.TargetRace = new List<string> { "Human" };
+                testStrain.FluidTransmission = true;
+                testStrain.InfectionSeverity = 1.2f;
+                HediffComp_VirusStrainContainer virusStrainContainer = new HediffComp_VirusStrainContainer();
+                virusStrainContainer.virus = testStrain;
+                // 将测试毒株添加到物品组件中
+                comp.AddVirusStrain(virusStrainContainer);
+            });
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\infection\AirborneInfectionController.cs
+=
+.
+﻿using HarmonyLib;
+using PromotionLib.PrLibDefOf;
+using PromotionLib.PrLibHediffComp;
+using RimWorld;
+using System.Collections.Generic;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib
+{
+    public class AirborneInfectionController : MapComponent
+    {
+        private const float RadiusFactor = 0.2f; 
+
+        // 复用的临时列表
+        private static readonly List<Pawn> tmpNearby = new List<Pawn>();
+
+        public AirborneInfectionController(Map map) : base(map) { }
+
+        public override void MapComponentTick()
+        {
+            var pawns = map.mapPawns.AllPawnsSpawned;
+            int count = pawns.Count;
+            if (count == 0)
+                return;
+            for (int i = 0; i < count; i++)
+            {
+                Pawn pawn = pawns[i];
+                if (pawn == null || !pawn.Spawned)
+                    continue;
+                HandleAirborneInfectionForSource(pawn);
+            }
+        }
+        private void HandleAirborneInfectionForSource(Pawn source)
+        {
+            var hediffs = source.health?.hediffSet?.hediffs;
+            if (hediffs == null || hediffs.Count == 0)
+                return;
+
+            foreach (Hediff h in hediffs)
+            {
+                if (h == null) continue;
+
+                var comp = h.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (comp == null || comp.virus == null)
+                    continue;
+
+                // 禁用空气传播或无空气存活力则跳过
+                if (comp.DisableAirborneTransmission || comp.virus.AirSurvivability <= 0)
+                    continue;
+
+                // 计算影响半径并收集邻近pawn
+                float radius = Mathf.Max(1f, comp.virus.AirSurvivability * RadiusFactor);
+                tmpNearby.Clear();
+                FillNearbyCreatures(source, radius, tmpNearby);
+
+                float baseProb = Mathf.Clamp01(comp.virus.Infectivity / 100f);
+
+                foreach (Pawn target in tmpNearby)
+                {
+                    if (target == null || !target.Spawned || target.Dead)
+                        continue;
+
+                    // 过滤不可感染种族
+                    if (!InfectionUtility.CheckRaceInfectability(target, comp.virus))
+                        continue;
+
+                    // 密封/防护抵抗（0~1）
+                    float resist = Mathf.Clamp01(target.GetStatValue(ValueDef.Sealing_level) * 0.2f);
+                    if (Rand.Value < resist)
+                        continue;
+
+                    // 距离衰减
+                    float dist = (source.Position - target.Position).LengthHorizontal;
+                    float falloff = Mathf.Clamp01(1f - (dist / (radius + 0.0001f)));
+
+                    float finalProb = Mathf.Clamp01(baseProb * falloff);
+                    if (finalProb <= 0f)
+                        continue;
+
+                    if (Rand.Value < finalProb)
+                    {
+                        // 未感染该病毒则执行传播
+                        if (InfectionUtility.IsInfectedWithVirus(target, comp.virus))
+                        {
+                            InfectionUtility.ExecuteVirusTransmission(target, comp.virus);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 将附近 Pawn 填充到 result（避免每次 new 列表）
+        public static void FillNearbyCreatures(Pawn center, float radius, List<Pawn> result)
+        {
+            if (center == null || !center.Spawned)
+                return;
+
+            // 遍历半径内格子，收集 Pawn（不包含自身）
+            foreach (IntVec3 cell in GenRadial.RadialCellsAround(center.Position, radius, useCenter: true))
+            {
+                if (!cell.InBounds(center.Map)) continue;
+
+                List<Thing> things = cell.GetThingList(center.Map);
+                for (int i = 0; i < things.Count; i++)
+                {
+                    if (things[i] is Pawn p && p != center)
+                    {
+                        result.Add(p);
+                    }
+                }
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\infection\ContactSpreadController.cs
+=
+.
+﻿using HarmonyLib;
+using PromotionLib.PrLibDefOf;
+using PromotionLib.PrLibHediffComp;
+using PromotionLib.Utils;
+using RimWorld;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.infection
+{
+    public class ContactSpreadController
+    {
+        public const bool isDebug = true;
+
+        // 消毒/防护等抗性系数
+        private const float DisinfectionFactor = 0.2f;
+
+        private static void RBDugInfo(string info)
+        {
+            if (isDebug)
+            {
+                Log.Message("[PromotionLib] " + info);
+            }
+        }
+
+        private static readonly List<HediffComp_VirusStrainContainer> tmpStrains = new List<HediffComp_VirusStrainContainer>();
+
+        // 统一的接触传播尝试逻辑：从物品上的VirusStrainComp对pawn进行感染尝试
+        private static void TryInfectPawnFromComp(Pawn target, VirusStrainComp comp, bool applyDisinfectionResist)
+        {
+            if (target == null || comp == null || comp.VirusStrain == null || comp.VirusStrain.Count == 0)
+                return;
+
+            tmpStrains.Clear();
+            tmpStrains.AddRange(comp.VirusStrain);
+
+            // 不使用 UniqueID 或名称去重；重复感染判断交由 InfectionUtility.IsInfectedWithVirus 处理
+
+            foreach (var vs in tmpStrains)
+            {
+                if (vs?.virus == null)
+                    continue;
+
+                // 仅处理表面携带（接触传播）
+                if (vs.virus.SurfacePersistence <= 0)
+                    continue;
+
+                // 种族可感染性检查
+                if (!InfectionUtility.CheckRaceInfectability(target, vs.virus))
+                    continue;
+
+                // 去重
+                string uid = vs.virus.UniqueID ?? vs.virus.StrainName ?? "";
+                //防护/消毒抵抗
+                if (applyDisinfectionResist)
+                {
+                    float resist = Mathf.Clamp01(target.GetStatValue(ValueDef.Disinfection_level) * DisinfectionFactor);
+                    if (Rand.Value < resist)
+                        continue;
+                }
+
+                // 感染基础概率
+                float p = Mathf.Clamp01(vs.virus.Infectivity / 100f);
+                if (p <= 0f)
+                    continue;
+
+                if (Rand.Value < p)
+                {
+                    // 注意：IsInfectedWithVirus 返回 true 表示可以感染（未感染）
+                    if (InfectionUtility.IsInfectedWithVirus(target, vs.virus))
+                    {
+                        InfectionUtility.ExecuteVirusTransmission(target, vs.virus);
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(GenRecipe), "PostProcessProduct")]
+        public static class GenRecipe_PostProcessProduct_Patch
+        {
+            public static void Postfix(Thing product, RecipeDef recipeDef, Pawn worker, Precept_ThingStyle precept, ThingStyleDef style, Nullable<int> overrideGraphicIndex, ref Thing __result)
+            {
+                Thing finalThing = __result;
+                Pawn maker = worker;
+                if (maker == null || finalThing == null)
+                {
+                    RBDugInfo("PostProcessProduct: 物品或者制作者为空");
+                    return;
+                }
+
+                // 制作过程的“污染被抵消”概率（由制作者的消毒水平决定）
+                float cancelProb = Mathf.Clamp01(maker.GetStatValue(ValueDef.Disinfection_level) * DisinfectionFactor);
+                if (Rand.Value < cancelProb)
+                    return;
+
+                var comp = finalThing.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                    return;
+
+                // 从制作者身上获取病毒并附着到物品上
+                var makerStrains = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(maker);
+                if (makerStrains.Count > 0)
+                {
+                    comp.AddVirusStrainList(makerStrains);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Thing), nameof(Thing.SplitOff), new Type[] { typeof(int) })]
+        static class Patch_Thing_SplitOff_Min
+        {
+            // __state = 分割前的物品（就是原实例）
+            static void Prefix(Thing __instance, out Thing __state)
+                => __state = __instance;
+
+            // __result = 分割后的物品（可能是新实例，也可能仍是原实例）
+            static void Postfix(ref Thing __result, Thing __state)
+            {
+                if (__result == null || __state == null)
+                    return;
+
+                var comp = __state.TryGetComp<VirusStrainComp>();
+                if (comp == null || comp.VirusStrain == null || comp.VirusStrain.Count == 0)
+                    return;
+
+                var newcomp = __result.TryGetComp<VirusStrainComp>();
+                if (newcomp == null)
+                    return;
+
+                newcomp.AddVirusStrainList(comp.VirusStrain);
+            }
+        }
+
+        [HarmonyPatch(typeof(Thing), nameof(Thing.Ingested))]
+        public static class Thing_Ingested_Patch
+        {
+            public static void Postfix(Thing __instance, Pawn ingester, float __result)
+            {
+                Thing food = __instance;
+                if (ingester == null || food == null)
+                    return;
+
+                var comp = food.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                    return;
+
+                // 食用时尝试感染：应用消毒抵抗
+                TryInfectPawnFromComp(ingester, comp, applyDisinfectionResist: true);
+            }
+        }
+
+        [HarmonyPatch(typeof(Pawn_EquipmentTracker), nameof(Pawn_EquipmentTracker.Notify_EquipmentAdded))]
+        /// <summary>
+        /// 在原始的 Notify_EquipmentAdded 方法执行完毕后运行。
+        /// </summary>
+        public static class Pawn_EquipmentTracker_AddEquipment_Postfix
+        {
+            public static void Postfix(Pawn_EquipmentTracker __instance, ThingWithComps eq)
+            {
+                Pawn pawn = __instance?.pawn;
+                if (pawn == null || eq == null)
+                    return;
+
+                var comp = eq.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                    return;
+
+                // 穿戴装备时尝试感染：应用消毒抵抗
+                TryInfectPawnFromComp(pawn, comp, applyDisinfectionResist: true);
+            }
+        }
+
+        [HarmonyPatch(typeof(CompUsable), nameof(CompUsable.UsedBy))]
+        public static class CompUsable_UsedBy_Patch
+        {
+            public static void Postfix(CompUsable __instance, Pawn p)
+            {
+                Thing usableThing = __instance?.parent;
+                if (p == null || usableThing == null)
+                    return;
+
+                var comp = usableThing.TryGetComp<VirusStrainComp>();
+                if (comp == null)
+                    return;
+
+                // 使用物品时尝试感染：应用消毒抵抗
+                TryInfectPawnFromComp(p, comp, applyDisinfectionResist: true);
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\infection\FluidTransmissionController.cs
+=
+.
+﻿using HarmonyLib;
+using PromotionLib.PrLibHediffComp;
+using PromotionLib.Utils;
+using RimWorld;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.infection
+{
+    public class FluidTransmissionController
+    {
+        public const bool isDebug = true;
+
+        private static void RBDugInfo(string info)
+        {
+            if (isDebug)
+            {
+                Log.Message("[PromotionLib] " + info);
+            }
+        }
+
+        private static readonly List<HediffComp_VirusStrainContainer> tmpStrains = new List<HediffComp_VirusStrainContainer>();
+
+        [HarmonyPatch(typeof(RecipeWorker), nameof(RecipeWorker.ApplyOnPawn))]
+        public static class Surgery_Patch
+        {
+            public static void Postfix(Pawn pawn, BodyPartRecord part, Pawn billDoer, List<Thing> ingredients, Bill bill)
+            {
+                // 仅对手术生效（兼容 Recipe_Surgery 派生类）
+                if (bill?.recipe?.Worker is Recipe_Surgery)
+                {
+                    if (billDoer != null && pawn != null)
+                    {
+                        // 双向体液传播，内部已使用 IsInfectedWithVirus 判断重复，并在 Execute 中深拷贝病毒
+                        InfectionUtility.PawnFluidTransmissionInfectedPawn(billDoer, pawn, 1f);
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(TendUtility), nameof(TendUtility.DoTend))]
+        public static class Tend_Patch
+        {
+            public static void Postfix(Pawn doctor, Pawn patient)
+            {
+                if (doctor != null && patient != null)
+                {
+                    InfectionUtility.PawnFluidTransmissionInfectedPawn(doctor, patient, 1f);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(JobDriver_Lovin), "MakeNewToils")]
+        public static class MakeNewToils_Patch
+        {
+            public static void Postfix(JobDriver_Lovin __instance)
+            {
+                Pawn initiator = __instance.pawn;
+
+                // 通过属性或字段获取 partner
+                PropertyInfo partnerProperty = typeof(JobDriver_Lovin).GetProperty("Partner", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+                Pawn partner = partnerProperty?.GetValue(__instance) as Pawn;
+                if (partner == null)
+                {
+                    FieldInfo partnerField = typeof(JobDriver_Lovin).GetField("partner", BindingFlags.NonPublic | BindingFlags.Instance);
+                    partner = partnerField?.GetValue(__instance) as Pawn;
+                }
+
+                if (initiator != null && partner != null)
+                {
+                    InfectionUtility.PawnFluidTransmissionInfectedPawn(initiator, partner, 2f);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Verb_MeleeAttack), "TryCastShot")]
+        public static class MeleeAttack_Patch
+        {
+            public static void Postfix(Verb_MeleeAttack __instance)
+            {
+                Pawn attacker = __instance.CasterPawn;
+                Pawn victim = __instance.CurrentTarget.Pawn;
+
+                if (attacker == null || victim == null)
+                    return;
+
+                // 收集攻击者身上的可体液传播病毒（避免每次分配新表）
+                tmpStrains.Clear();
+                tmpStrains.AddRange(VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(attacker));
+
+                foreach (var vs in tmpStrains)
+                {
+                    if (vs?.virus == null)
+                        continue;
+
+                    // 仅处理“体液传播”病毒，且该开关未被禁用
+                    if (!vs.virus.FluidTransmission)
+                        continue;
+                    if (vs.isFluidTransmissionEnabled) // 被禁用则跳过（命名沿用原逻辑）
+                        continue;
+
+                    // 可感染性检查（仅当 true 时继续）
+                    if (!InfectionUtility.CheckRaceInfectability(victim, vs.virus))
+                        continue;
+
+                    // 基础感染概率（Clamp 防越界）
+                    float p = Mathf.Clamp01(vs.virus.Infectivity / 100f);
+                    if (p <= 0f)
+                        continue;
+
+                    if (Rand.Value < p)
+                    {
+                        // 仅当目标未感染此病毒时执行（重复判定交由 InfectionUtility）
+                        if (InfectionUtility.IsInfectedWithVirus(victim, vs.virus))
+                        {
+                            InfectionUtility.ExecuteVirusTransmission(victim, vs.virus);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\kindsett\BaseUnionClone.cs
+=
+.
+using HarmonyLib;
+using RimWorld;
+using Verse;
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+/// <summary>
+/// 联邦克隆人基础设置类
+/// 包含所有克隆人类型的通用逻辑
+/// </summary>
+public abstract class BaseUnionClone
+{
+    // ==============================
+    // 抽象属性 - 子类必须实现
+    // ==============================
+    
+    /// <summary>
+    /// 目标 PawnKind 常量集合（生效的兵种）
+    /// </summary>
+    protected abstract string[] TargetPawnKinds { get; }
+    
+    /// <summary>
+    /// 可选武器常量集合（可初始赋值）
+    /// </summary>
+    protected abstract string[] WeaponDefNames { get; }
+    
+    /// <summary>
+    /// 护甲定义名称
+    /// </summary>
+    protected abstract string ArmorDefName { get; }
+    
+    /// <summary>
+    /// 头盔定义名称
+    /// </summary>
+    protected abstract string HelmetDefName { get; }
+    
+    /// <summary>
+    /// 克隆人类型名称（用于日志和命名）
+    /// </summary>
+    protected abstract string CloneTypeName { get; }
+    
+    /// <summary>
+    /// 克隆人品质标签
+    /// </summary>
+    protected abstract string QualityLabel { get; }
+    
+    /// <summary>
+    /// 基础心情值
+    /// </summary>
+    protected virtual float BaseMoodLevel => 0.8f;
+    
+    /// <summary>
+    /// 射击技能等级
+    /// </summary>
+    protected virtual int ShootingSkillLevel => 15;
+    
+    /// <summary>
+    /// 近战技能等级
+    /// </summary>
+    protected virtual int MeleeSkillLevel => 10;
+    
+    /// <summary>
+    /// 医疗技能等级
+    /// </summary>
+    protected virtual int MedicineSkillLevel => 10;
+    
+    /// <summary>
+    /// 建造技能等级
+    /// </summary>
+    protected virtual int ConstructionSkillLevel => 0;
+    
+    /// <summary>
+    /// 额外特征列表
+    /// </summary>
+    protected virtual string[] AdditionalTraits => new string[0];
+
+    // ==============================
+    // 共享常量
+    // ==============================
+    
+    // 随机数（不每次 new，避免种子重复）
+    protected static readonly System.Random s_random = new System.Random();
+
+    // ==============================
+    // 主要处理方法
+    // ==============================
+    
+    /// <summary>
+    /// 处理克隆人设置的主要方法
+    /// </summary>
+    public void ProcessClone(Pawn pawn)
+    {
+        // 基本空值检查
+        if (pawn == null)
+        {
+            return;
+        }
+        if (pawn.kindDef == null || pawn.kindDef.defName == null)
+        {
+            return;
+        }
+        if (pawn.story == null || pawn.skills == null)
+        {
+            return;
+        }
+
+        // 仅对人类并且是指定的 Kind 生效
+        if (pawn.def != ThingDefOf.Human)
+        {
+            return;
+        }
+        if (pawn.RaceProps == null || !pawn.RaceProps.Humanlike)
+        {
+            return;
+        }
+        if (!IsKindInTargetList(pawn.kindDef.defName))
+        {
+            return;
+        }
+
+        Log.Message("[PromotionLib] Customizing " + pawn.kindDef.defName + " traits and skills");
+
+        // ====== 外观设定 ======
+        SetupAppearance(pawn);
+
+        // ====== 特征（Traits）设定 ======
+        SetupTraits(pawn);
+
+        // ====== 心情设定（降低精神崩溃概率） ======
+        SetupMood(pawn);
+
+        // ====== 技能设定 ======
+        SetupSkills(pawn);
+
+        // ====== 装备生成（护甲、头盔、主武器） ======
+        GenerateEquipment(pawn);
+
+        // ====== 名字与背景 ======
+        SetupNameAndBackground(pawn);
+
+        // 刷新渲染
+        if (pawn.Drawer != null && pawn.Drawer.renderer != null)
+        {
+            pawn.Drawer.renderer.SetAllGraphicsDirty();
+        }
+    }
+
+    // ==============================
+    // 私有辅助方法
+    // ==============================
+    
+    /// <summary>
+    /// 设置外观
+    /// </summary>
+    private void SetupAppearance(Pawn pawn)
+    {
+        pawn.story.bodyType = BodyTypeDefOf.Male;
+        HairDef shaved = DefDatabase<HairDef>.GetNamed("Shaved", false);
+        if (shaved != null)
+        {
+            pawn.story.hairDef = shaved;
+        }
+        pawn.story.skinColorOverride = new Color(1.0f, 0.93f, 0.6f);
+    }
+
+    /// <summary>
+    /// 设置特征
+    /// </summary>
+    private void SetupTraits(Pawn pawn)
+    {
+        if (pawn.story.traits != null && pawn.story.traits.allTraits != null)
+        {
+            pawn.story.traits.allTraits.Clear();
+
+            // 基础特征
+            TraitDef toughDef = TraitDef.Named("Tough");
+            if (toughDef != null)
+            {
+                pawn.story.traits.GainTrait(new Trait(toughDef));
+            }
+
+            TraitDef braveDef = DefDatabase<TraitDef>.GetNamed("Brave", false);
+            if (braveDef != null)
+            {
+                pawn.story.traits.GainTrait(new Trait(braveDef));
+            }
+
+            // 确保移除"Coward"（懦弱）
+            TraitDef cowardDef = DefDatabase<TraitDef>.GetNamed("Coward", false);
+            if (cowardDef != null && pawn.story.traits.HasTrait(cowardDef))
+            {
+                Trait t = pawn.story.traits.GetTrait(cowardDef);
+                if (t != null)
+                {
+                    pawn.story.traits.RemoveTrait(t);
+                }
+            }
+
+            // 添加额外特征
+            foreach (string traitName in AdditionalTraits)
+            {
+                TraitDef traitDef = DefDatabase<TraitDef>.GetNamed(traitName, false);
+                if (traitDef != null)
+                {
+                    pawn.story.traits.GainTrait(new Trait(traitDef));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 设置心情
+    /// </summary>
+    private void SetupMood(Pawn pawn)
+    {
+        if (pawn.needs != null && pawn.needs.mood != null)
+        {
+            pawn.needs.mood.CurLevel = BaseMoodLevel;
+        }
+    }
+
+    /// <summary>
+    /// 设置技能
+    /// </summary>
+    private void SetupSkills(Pawn pawn)
+    {
+        if (pawn.skills != null && pawn.skills.skills != null)
+        {
+            foreach (SkillRecord skill in pawn.skills.skills)
+            {
+                if (skill != null && skill.def != null && skill.def.defName != null)
+                {
+                    switch (skill.def.defName)
+                    {
+                        case "Shooting":
+                            skill.Level = ShootingSkillLevel;
+                            break;
+                        case "Melee":
+                            skill.Level = MeleeSkillLevel;
+                            break;
+                        case "Medicine":
+                            skill.Level = MedicineSkillLevel;
+                            break;
+                        case "Construction":
+                            skill.Level = ConstructionSkillLevel;
+                            break;
+                        default:
+                            skill.Level = 0;
+                            break;
+                    }
+
+                    // 禁止热情 & 经验增长
+                    skill.passion = Passion.None;
+                    skill.xpSinceLastLevel = 0f;
+                    skill.xpSinceMidnight = 0f;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 设置名字和背景
+    /// </summary>
+    private void SetupNameAndBackground(Pawn pawn)
+    {
+        string id = GenerateCloneName();
+        pawn.Name = new NameTriple(CloneTypeName, id, QualityLabel);
+
+        BackstoryDef child = DefDatabase<BackstoryDef>.GetNamed("UnionClone_Cadet", false);
+        if (child != null)
+        {
+            pawn.story.Childhood = child;
+        }
+        BackstoryDef adult = DefDatabase<BackstoryDef>.GetNamed("UnionClone_Soldier", false);
+        if (adult != null)
+        {
+            pawn.story.Adulthood = adult;
+        }
+    }
+
+    /// <summary>
+    /// 检查 Kind 是否在目标集合
+    /// </summary>
+    private bool IsKindInTargetList(string kindDefName)
+    {
+        if (kindDefName == null)
+        {
+            return false;
+        }
+        for (int i = 0; i < TargetPawnKinds.Length; i++)
+        {
+            if (TargetPawnKinds[i] == kindDefName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 生成装备
+    /// </summary>
+    private void GenerateEquipment(Pawn pawn)
+    {
+        if (pawn == null)
+        {
+            return;
+        }
+
+        // ====== 护甲 ======
+        if (pawn.apparel != null)
+        {
+            if (!HasApparel(pawn, ArmorDefName))
+            {
+                ThingDef armorDef = DefDatabase<ThingDef>.GetNamed(ArmorDefName, false);
+                if (armorDef != null)
+                {
+                    Apparel armor = ThingMaker.MakeThing(armorDef) as Apparel;
+                    if (armor != null)
+                    {
+                        pawn.apparel.Wear(armor, false);
+                    }
+                }
+            }
+
+            // ====== 头盔 ======
+            if (!HasApparel(pawn, HelmetDefName))
+            {
+                ThingDef helmetDef = DefDatabase<ThingDef>.GetNamed(HelmetDefName, false);
+                if (helmetDef != null)
+                {
+                    Apparel helmet = ThingMaker.MakeThing(helmetDef) as Apparel;
+                    if (helmet != null)
+                    {
+                        pawn.apparel.Wear(helmet, false);
+                    }
+                }
+            }
+        }
+
+        // ====== 主武器：从武器常量集合随机选择 ======
+        if (pawn.equipment == null)
+        {
+            return;
+        }
+
+        ThingDef randomWeaponDef = GetRandomWeaponDefFromPool();
+
+        if (randomWeaponDef != null)
+        {
+            if (pawn.equipment.Primary == null)
+            {
+                ThingWithComps newWeaponA = ThingMaker.MakeThing(randomWeaponDef) as ThingWithComps;
+                if (newWeaponA != null)
+                {
+                    pawn.equipment.AddEquipment(newWeaponA);
+                }
+            }
+            else
+            {
+                if (!IsDefNameInArray(pawn.equipment.Primary.def.defName, WeaponDefNames))
+                {
+                    ThingWithComps cur = pawn.equipment.Primary;
+                    if (cur != null)
+                    {
+                        pawn.equipment.Remove(cur);
+                    }
+                    ThingWithComps newWeaponB = ThingMaker.MakeThing(randomWeaponDef) as ThingWithComps;
+                    if (newWeaponB != null)
+                    {
+                        pawn.equipment.AddEquipment(newWeaponB);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 从武器池随机取一个 ThingDef
+    /// </summary>
+    private ThingDef GetRandomWeaponDefFromPool()
+    {
+        if (WeaponDefNames == null || WeaponDefNames.Length == 0)
+        {
+            return null;
+        }
+        int idx = s_random.Next(WeaponDefNames.Length);
+        string defName = WeaponDefNames[idx];
+
+        if (defName == null)
+        {
+            return null;
+        }
+        ThingDef weaponDef = DefDatabase<ThingDef>.GetNamed(defName, false);
+        return weaponDef;
+    }
+
+    /// <summary>
+    /// 判断 Pawn 是否已穿戴指定 defName 的衣物
+    /// </summary>
+    private bool HasApparel(Pawn pawn, string apparelDefName)
+    {
+        if (pawn == null || pawn.apparel == null || pawn.apparel.WornApparel == null || apparelDefName == null)
+        {
+            return false;
+        }
+
+        List<Apparel> worn = pawn.apparel.WornApparel;
+        for (int i = 0; i < worn.Count; i++)
+        {
+            Apparel a = worn[i];
+            if (a != null && a.def != null && a.def.defName == apparelDefName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 在字符串数组中查找指定 defName
+    /// </summary>
+    private bool IsDefNameInArray(string defName, string[] pool)
+    {
+        if (defName == null || pool == null)
+        {
+            return false;
+        }
+        for (int i = 0; i < pool.Length; i++)
+        {
+            if (pool[i] == defName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 生成克隆名：两个大写字母 + 四个数字
+    /// </summary>
+    private string GenerateCloneName()
+    {
+        const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        char[] name = new char[6];
+
+        // 前两位字母
+        int i0 = s_random.Next(letters.Length);
+        int i1 = s_random.Next(letters.Length);
+        name[0] = letters[i0];
+        name[1] = letters[i1];
+
+        // 后四位数字
+        for (int i = 2; i < 6; i++)
+        {
+            int d = s_random.Next(10);
+            name[i] = (char)('0' + d);
+        }
+
+        return new string(name);
+    }
+} .
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\kindsett\UnionCloneAssault.cs
+=
+.
+﻿using HarmonyLib;
+using RimWorld;
+using Verse;
+using UnityEngine; // 用于 Color
+using System;      // 用于 Random
+using System.Collections.Generic;
+
+/// <summary>
+/// 联邦克隆人突击兵设置类
+/// 继承自BaseUnionClone，实现突击兵特有的配置
+/// </summary>
+[HarmonyPatch(typeof(PawnGenerator), "TryGenerateNewPawnInternal")]
+public static class UnionCloneAssault
+{
+    // 突击兵配置类实例
+    private static readonly UnionCloneAssaultConfig config = new UnionCloneAssaultConfig();
+
+    [HarmonyPostfix]
+    public static void Postfix(Pawn __result)
+    {
+        // 调用父类的处理方法
+        config.ProcessClone(__result);
+    }
+}
+
+/// <summary>
+/// 联邦克隆人突击兵配置类
+/// 继承自BaseUnionClone，定义突击兵特有的属性
+/// </summary>
+public class UnionCloneAssaultConfig : BaseUnionClone
+{
+    // ==============================
+    // 抽象属性实现
+    // ==============================
+    
+    /// <summary>
+    /// 目标 PawnKind 常量集合（生效的兵种）
+    /// </summary>
+    protected override string[] TargetPawnKinds => new string[]
+    {
+        "UnionCloneAssault"
+    };
+
+    /// <summary>
+    /// 可选武器常量集合（可初始赋值）
+    /// </summary>
+    protected override string[] WeaponDefNames => new string[]
+    {
+        "Gun_Type5EM_CQC",
+        "Gun_Type5ElectromagneticRifle"
+    };
+
+    /// <summary>
+    /// 护甲定义名称
+    /// </summary>
+    protected override string ArmorDefName => "CloneRecon_Armor";
+
+    /// <summary>
+    /// 头盔定义名称
+    /// </summary>
+    protected override string HelmetDefName => "CloneRecon_Helmet";
+
+    /// <summary>
+    /// 克隆人类型名称（用于日志和命名）
+    /// </summary>
+    protected override string CloneTypeName => "联邦克隆人突击兵";
+
+    /// <summary>
+    /// 克隆人品质标签
+    /// </summary>
+    protected override string QualityLabel => "合格品";
+
+    // ==============================
+    // 可选重写属性（使用默认值）
+    // ==============================
+    
+    // 基础心情值：使用默认值 0.8f
+    // 射击技能等级：使用默认值 15
+    // 近战技能等级：使用默认值 10
+    // 医疗技能等级：使用默认值 10
+    // 建造技能等级：使用默认值 0
+    // 额外特征列表：使用默认值（空数组）
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\kindsett\UnionCloneHeavy.cs
+=
+.
+using HarmonyLib;
+using RimWorld;
+using Verse;
+using UnityEngine; // 用于 Color
+using System;      // 用于 Random
+using System.Collections.Generic;
+
+/// <summary>
+/// 联邦克隆人火力兵设置类
+/// 继承自BaseUnionClone，实现火力兵特有的配置
+/// </summary>
+[HarmonyPatch(typeof(PawnGenerator), "TryGenerateNewPawnInternal")]
+public static class UnionCloneHeavy
+{
+    // 火力兵配置类实例
+    private static readonly UnionCloneHeavyConfig config = new UnionCloneHeavyConfig();
+
+    [HarmonyPostfix]
+    public static void Postfix(Pawn __result)
+    {
+        // 调用父类的处理方法
+        config.ProcessClone(__result);
+    }
+}
+
+/// <summary>
+/// 联邦克隆人火力兵配置类
+/// 继承自BaseUnionClone，定义火力兵特有的属性
+/// </summary>
+public class UnionCloneHeavyConfig : BaseUnionClone
+{
+    // ==============================
+    // 抽象属性实现
+    // ==============================
+    
+    /// <summary>
+    /// 目标 PawnKind 常量集合（生效的兵种）
+    /// </summary>
+    protected override string[] TargetPawnKinds => new string[]
+    {
+        "UnionCloneHeavy"
+    };
+
+    /// <summary>
+    /// 可选武器常量集合（可初始赋值）
+    /// </summary>
+    protected override string[] WeaponDefNames => new string[]
+    {
+        "Type6_gale_emg"
+    };
+
+    /// <summary>
+    /// 护甲定义名称
+    /// </summary>
+    protected override string ArmorDefName => "CloneAlliHeavy_Armor";
+
+    /// <summary>
+    /// 头盔定义名称
+    /// </summary>
+    protected override string HelmetDefName => "CloneAlliHeavy_Helmet";
+
+    /// <summary>
+    /// 克隆人类型名称（用于日志和命名）
+    /// </summary>
+    protected override string CloneTypeName => "联邦克隆人火力兵";
+
+    /// <summary>
+    /// 克隆人品质标签
+    /// </summary>
+    protected override string QualityLabel => "优秀品";
+
+    // ==============================
+    // 重写属性（火力兵特有配置）
+    // ==============================
+    
+    /// <summary>
+    /// 基础心情值（火力兵心情略高）
+    /// </summary>
+    protected override float BaseMoodLevel => 0.85f;
+    
+    /// <summary>
+    /// 射击技能等级（火力兵射击技能更高）
+    /// </summary>
+    protected override int ShootingSkillLevel => 18;
+    
+    /// <summary>
+    /// 近战技能等级（火力兵近战技能略低）
+    /// </summary>
+    protected override int MeleeSkillLevel => 8;
+    
+    /// <summary>
+    /// 医疗技能等级
+    /// </summary>
+    protected override int MedicineSkillLevel => 8;
+    
+    /// <summary>
+    /// 建造技能等级（用于掩体）
+    /// </summary>
+    protected override int ConstructionSkillLevel => 5;
+    
+    /// <summary>
+    /// 额外特征列表（火力兵特有特征：坚韧不拔）
+    /// </summary>
+    protected override string[] AdditionalTraits => new string[]
+    {
+        "Steadfast"
+    };
+} .
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\kindsett\UnionCommanderSett.cs
+=
+.
+﻿using HarmonyLib;
+using RimWorld;
+using Verse;
+using UnityEngine; // 用于 Color
+using System;      // 用于 Random
+using System.Collections.Generic;
+
+/// <summary>
+/// 联邦克隆人指挥官设置类
+/// 继承自BaseUnionClone，实现指挥官特有的配置
+/// </summary>
+[HarmonyPatch(typeof(PawnGenerator), "TryGenerateNewPawnInternal")]
+public static class UnionCommanderSett
+{
+    // 指挥官配置类实例
+    private static readonly UnionCommanderConfig config = new UnionCommanderConfig();
+
+    [HarmonyPostfix]
+    public static void Postfix(Pawn __result)
+    {
+        // 调用父类的处理方法
+        config.ProcessClone(__result);
+    }
+}
+
+/// <summary>
+/// 联邦克隆人指挥官配置类
+/// 继承自BaseUnionClone，定义指挥官特有的属性
+/// </summary>
+public class UnionCommanderConfig : BaseUnionClone
+{
+    // ==============================
+    // 抽象属性实现
+    // ==============================
+    
+    /// <summary>
+    /// 目标 PawnKind 常量集合（生效的兵种）
+    /// </summary>
+    protected override string[] TargetPawnKinds => new string[]
+    {
+        "UnionCommander"
+    };
+
+    /// <summary>
+    /// 可选武器常量集合（可初始赋值）
+    /// </summary>
+    protected override string[] WeaponDefNames => new string[]
+    {
+        "Gun_Type5EM_CQC"
+    };
+
+    /// <summary>
+    /// 护甲定义名称
+    /// </summary>
+    protected override string ArmorDefName => "CloneSoldier_Armor";
+
+    /// <summary>
+    /// 头盔定义名称
+    /// </summary>
+    protected override string HelmetDefName => "CloneSoldier_Helmet";
+
+    /// <summary>
+    /// 克隆人类型名称（用于日志和命名）
+    /// </summary>
+    protected override string CloneTypeName => "联邦克隆人指挥官";
+
+    /// <summary>
+    /// 克隆人品质标签
+    /// </summary>
+    protected override string QualityLabel => "合格品";
+
+    // ==============================
+    // 可选重写属性（使用默认值）
+    // ==============================
+    
+    // 基础心情值：使用默认值 0.8f
+    // 射击技能等级：使用默认值 15
+    // 近战技能等级：使用默认值 10
+    // 医疗技能等级：使用默认值 10
+    // 建造技能等级：使用默认值 0
+    // 额外特征列表：使用默认值（空数组）
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\obj\Debug\.NETFramework,Version=v4.7.2.AssemblyAttributes.cs
+=
+.
+// <autogenerated />
+using System;
+using System.Reflection;
+[assembly: global::System.Runtime.Versioning.TargetFrameworkAttribute(".NETFramework,Version=v4.7.2", FrameworkDisplayName = ".NET Framework 4.7.2")]
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\obj\Debug\.NETFramework,Version=v4.8.AssemblyAttributes.cs
+=
+.
+// <autogenerated />
+using System;
+using System.Reflection;
+[assembly: global::System.Runtime.Versioning.TargetFrameworkAttribute(".NETFramework,Version=v4.8", FrameworkDisplayName = ".NET Framework 4.8")]
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Patches\customArmorDraw.cs
+=
+.
+﻿using HarmonyLib;
+using PromotionLib.PrLibDefOf;
+using RimWorld;
+using System;
+using System.Reflection;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.Patches
+{
+    public static class customArmorDraw
+    {
+        [HarmonyPatch(typeof(Widgets))]
+        public static class Widgets_ListSeparator_Patch
+        {
+            public static MethodInfo TargetMethod()
+            {
+                return AccessTools.Method(
+                    typeof(Widgets),
+                    "ListSeparator",
+                    new Type[] { typeof(float).MakeByRefType(), typeof(float), typeof(string) }
+                );
+            }
+
+            public static void Postfix(ref float curY, float width, string label)
+            {
+                if (label != "OverallArmor".Translate())
+                {
+                    return;
+                }
+                Pawn pawn = Find.Selector.SingleSelectedThing as Pawn;
+                if (pawn == null)
+                {
+                    return;
+                }
+                Rect listingRect = new Rect(0f, curY, width, 80f); // 高度可以给个大概值
+                Listing_Standard listing = new Listing_Standard();
+                listing.Begin(listingRect);
+                listing.Label(ValueDef.Disinfection_level.label + ":" + pawn.GetStatValue(ValueDef.Disinfection_level));
+                listing.Label(ValueDef.Sealing_level.label + ":" + pawn.GetStatValue(ValueDef.Sealing_level));
+                listing.End();
+                curY += listing.CurHeight;
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Patches\RaceLSMPatche.cs
+=
+.
+﻿// File: Patches.cs
+using HarmonyLib;
+using RimWorld;
+using System;
+using System.Reflection;
+using Verse;
+
+namespace PromotionLib
+{
+    public static class RaceLSMPatche
+    {
+        private const string TargetDefName = "Luoshumeng"; // 确保和ThingDef.defName完全一致
+
+        [HarmonyPatch(typeof(PawnGenerator), "TryGenerateNewPawnInternal")]
+        public static class UnionCloneAssault
+        {
+            // 突击兵配置类实例
+            private static readonly UnionCloneAssaultConfig config = new UnionCloneAssaultConfig();
+
+            [HarmonyPostfix]
+            public static void Postfix(Pawn __result)
+            {
+                if (__result?.def?.defName == TargetDefName)
+                {
+                  
+                }
+            }
+        }
+
+        // 疼痛恒为0：打在 HediffSet.PainTotal 的 getter 上
+        [HarmonyPatch(typeof(HediffSet), nameof(HediffSet.PainTotal), MethodType.Getter)]
+        public static class PainTotal_Getter_Patch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(HediffSet __instance, ref float __result)
+            {
+                var pawn = TryGetPawn(__instance);
+                if (pawn?.def?.defName == TargetDefName)
+                    __result = 0f;
+            }
+        }
+
+        // —— 注意：CurLevel 声明在 Need 上，而不是 Need_Rest / Need_Food ——
+
+        // 写入时强制保持100%
+        [HarmonyPatch(typeof(Need), nameof(Need.CurLevel), MethodType.Setter)]
+        public static class Need_CurLevel_Setter_Patch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(Need __instance, ref float value)
+            {
+                var pawn = TryGetPawnFromNeed(__instance);
+                if (pawn?.def?.defName == TargetDefName && (__instance is Need_Rest || __instance is Need_Food))
+                {
+                    if (value < 1f) value = 1f;
+                }
+            }
+        }
+
+        // 读取时永远返回100%
+        [HarmonyPatch(typeof(Need), nameof(Need.CurLevel), MethodType.Getter)]
+        public static class Need_CurLevel_Getter_Patch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(Need __instance, ref float __result)
+            {
+                var pawn = TryGetPawnFromNeed(__instance);
+                if (pawn?.def?.defName == TargetDefName && (__instance is Need_Rest || __instance is Need_Food))
+                {
+                    __result = 1f;
+                }
+            }
+        }
+
+        // 隐藏睡眠/饮食条（通打 Need 的绘制方法）
+        [HarmonyPatch(typeof(Need), nameof(Need.DrawOnGUI))]
+        public static class Need_DrawOnGUI_Patch
+        {
+            [HarmonyPrefix]
+            public static bool Prefix(Need __instance)
+            {
+                var pawn = TryGetPawnFromNeed(__instance);
+                if (pawn?.def?.defName == TargetDefName && (__instance is Need_Rest || __instance is Need_Food))
+                    return false; // 跳过原方法
+                return true;
+            }
+        }
+
+        // —— 工具函数 ——
+        private static Pawn TryGetPawn(HediffSet hs)
+        {
+            try { if (hs.pawn != null) return hs.pawn; } catch { }
+            var t = typeof(HediffSet);
+            var f = AccessTools.Field(t, "pawn") ?? AccessTools.Field(t, "pawnInt") ?? AccessTools.Field(t, "_pawn");
+            return f?.GetValue(hs) as Pawn;
+        }
+
+        private static Pawn TryGetPawnFromNeed(Need need)
+        {
+            try
+            {
+                var f = AccessTools.Field(need.GetType(), "pawn") ?? AccessTools.Field(typeof(Need), "pawn");
+                if (f != null) return f.GetValue(need) as Pawn;
+            }
+            catch { }
+            return null;
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Patches\UnionMilitaryNaming.cs
+=
+.
+using HarmonyLib;
+using RimWorld;
+using Verse;
+using System;
+using System.Collections.Generic;
+
+namespace PromotionLib
+{
+    /// <summary>
+    /// 联盟军方命名系统
+    /// 负责生成派系名称和定居点名称
+    /// </summary>
+    public static class UnionMilitaryNaming
+    {
+        // 舰队类型
+        private static readonly string[] FleetTypes = new string[]
+        {
+            "远征", "征服", "合作", "开拓"
+        };
+
+        // 代号库
+        private static readonly string[] CodeNames = new string[]
+        {
+            "铁幕", "深空獠牙", "福音信使", "熵烬", "净世之光", "猩红黎明", 
+            "不朽权杖", "锈火", "灰烬先驱", "沉默哨兵", "赤冠", "星尘", 
+            "远疆", "铁律", "净焰", "幽影", "誓约", "歧路", "余烬", 
+            "天秤", "断矛", "潮汐", "歧光", "黑曜", "归尘"
+        };
+
+        // 随机数生成器
+        private static readonly Random Random = new Random();
+
+        /// <summary>
+        /// 生成派系名称
+        /// 格式：第X号[类型]舰队
+        /// </summary>
+        public static string GenerateFactionName()
+        {
+            int fleetNumber = Random.Next(1, 100); // 1-99号
+            string fleetType = FleetTypes[Random.Next(FleetTypes.Length)];
+            
+            return $"第{fleetNumber}号{fleetType}舰队";
+        }
+
+        /// <summary>
+        /// 生成定居点名称
+        /// 格式：第X号[类型]舰队"[代号]"
+        /// </summary>
+        public static string GenerateSettlementName()
+        {
+            int fleetNumber = Random.Next(1, 100); // 1-99号
+            string fleetType = FleetTypes[Random.Next(FleetTypes.Length)];
+            string codeName = CodeNames[Random.Next(CodeNames.Length)];
+            
+            return $"第{fleetNumber}号{fleetType}舰队\"{codeName}\"";
+        }
+
+        /// <summary>
+        /// 获取随机代号
+        /// </summary>
+        public static string GetRandomCodeName()
+        {
+            return CodeNames[Random.Next(CodeNames.Length)];
+        }
+
+        /// <summary>
+        /// 获取随机舰队类型
+        /// </summary>
+        public static string GetRandomFleetType()
+        {
+            return FleetTypes[Random.Next(FleetTypes.Length)];
+        }
+    }
+
+    /// <summary>
+    /// 联盟军方派系命名器补丁
+    /// 在派系创建完成后设置名称
+    /// </summary>
+    [HarmonyPatch(typeof(Faction), "Name", MethodType.Getter)]
+    public static class UnionMilitaryFactionNamingPatch
+    {
+        private static readonly Dictionary<Faction, string> FactionNames = new Dictionary<Faction, string>();
+
+        [HarmonyPostfix]
+        public static void Postfix(Faction __instance, ref string __result)
+        {
+            // 检查是否为联盟远征军派系
+            if (__instance.def?.defName == "UnionExpedition")
+            {
+                // 如果已经生成过名称，直接返回
+                if (FactionNames.ContainsKey(__instance))
+                {
+                    __result = FactionNames[__instance];
+                    return;
+                }
+
+                // 生成新的派系名称
+                string newName = UnionMilitaryNaming.GenerateFactionName();
+                FactionNames[__instance] = newName;
+                __result = newName;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 联盟军方定居点命名器补丁
+    /// 使用更通用的方式处理定居点命名
+    /// </summary>
+    [HarmonyPatch(typeof(Thing), "Label", MethodType.Getter)]
+    public static class UnionMilitarySettlementNamingPatch
+    {
+        private static readonly Dictionary<Thing, string> SettlementNames = new Dictionary<Thing, string>();
+
+        [HarmonyPostfix]
+        public static void Postfix(Thing __instance, ref string __result)
+        {
+            // 检查是否为联盟远征军派系的定居点
+            if (__instance.Faction?.def?.defName == "UnionExpedition")
+            {
+                // 检查是否为定居点类型
+                if (__instance.def.defName.Contains("Settlement") || __instance.def.defName.Contains("Base"))
+                {
+                    // 如果已经生成过名称，直接返回
+                    if (SettlementNames.ContainsKey(__instance))
+                    {
+                        __result = SettlementNames[__instance];
+                        return;
+                    }
+
+                    // 生成新的定居点名称
+                    string newName = UnionMilitaryNaming.GenerateSettlementName();
+                    SettlementNames[__instance] = newName;
+                    __result = newName;
+                }
+            }
+        }
+    }
+
+    
+} .
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Patches\wapenRend.cs
+=
+.
+﻿using HarmonyLib;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib
+{
+    public class wapenRend
+    {
+       
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Place\PlaceWorker_ShowEffectRange.cs
+=
+.
+﻿using PromotionLib.comp;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.Place
+{
+    public class PlaceWorker_ShowEffectRange : PlaceWorker
+    {
+        public override void DrawGhost(ThingDef def, IntVec3 center, Rot4 rot, Color ghostCol, Thing thing = null)
+        {
+            // 从建筑的Def中获取你的自定义组件属性
+            BuildingStrainClearCompProperties compProps = def.GetCompProperties<BuildingStrainClearCompProperties>();
+
+            // 如果找到了这个组件，并且它的范围大于0
+            if (compProps != null && compProps.effectRange > 0f)
+            {
+                // 就使用它的 effectRange 属性来绘制范围圈
+                GenDraw.DrawRadiusRing(center, compProps.effectRange);
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\pojo\Complication.cs
+=
+.
+﻿using Verse;
+
+namespace PromotionLib
+{
+    public class Complication : IExposable
+    {
+        public string ComplicationType;
+        //{
+        //    /// <summary>
+        //    /// 通用并发症：大多数病毒都会产生的常见并发症
+        //    /// </summary>
+        //    GenericComplication,
+        //    /// <summary>
+        //    /// 典型并发症：特定病毒的标志性症状
+        //    /// </summary>
+        //    SignatureComplication,
+
+        //    /// <summary>
+        //    /// 神经类典型并发症：具有神经系统特征的典型症状
+        //    /// </summary>
+        //    NeuroSignatureComplication,
+
+        //    /// <summary>
+        //    /// 技能类：全身状态，给予一个技能或能力
+        //    /// </summary>
+        //    AbilityComplication,
+
+        //    /// <summary>
+        //    /// 升华类：具有正面影响的特殊并发症（类似进化）
+        //    /// </summary>
+        //    EvolutionComplication
+        //}
+
+        public string TargetScope;
+        //{
+        //    /// <summary>
+        //    /// 全身
+        //    /// </summary>
+        //    WholeBody,
+        //    /// <summary>
+        //    /// 部位
+        //    /// </summary>
+        //    BodyPart
+        //}
+        public int severityLevel;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref ComplicationType, "ComplicationType", "");
+            Scribe_Values.Look(ref TargetScope, "TargetScope", "");
+            Scribe_Values.Look(ref severityLevel, "severityLevel", 0);
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\pojo\VirusStrain.cs
+=
+.
+using RimWorld;
+using System;
+using System.Collections.Generic;
+using Verse;
+
+namespace PromotionLib
+{
+
+    /// <summary>
+    /// 毒株的名称
+    /// </summary>
+    public enum VirusCategory
+    {
+        PandemicVirus,        // 流行病毒类
+        SimplePapillomaVirus, // 单纯疱疹类
+        NeurotropicVirus,     // 嗜神经病毒类
+        ExoticDNAVirus,       // 异种DNA病毒
+        FlashRNAVirus,        // 闪耀RNA病毒
+        NanoBioweapon,        // 纳米级生物武器
+        ZeroToxicStructure,   // 零号毒株结构体
+        AscendedFireVirus     // 升华火种类
+    }
+    /// <summary>
+    /// 表示一种病毒毒株的定义，包括基础属性、传播能力、适应性、标记与唯一ID等。
+    /// 用于 RimWorld 的病毒模拟系统。
+    /// </summary>
+    public class VirusStrain : ILoadReferenceable, IExposable
+    {
+
+        public VirusCategory Type = VirusCategory.PandemicVirus;
+        public string StrainName = "未知毒株";
+
+        /// <summary>
+        /// 动物是否可以被感染
+        /// </summary>
+        public bool CanInfectAnimals = false;
+
+        /// <summary>
+        /// 传播力，值越高传播越快
+        /// </summary>
+        public int Infectivity = 50;
+
+        /// <summary>
+        /// 致病性，值越高危害越大
+        /// </summary>
+        public int Pathogenicity = 50;
+
+        /// <summary>
+        /// 抗原强度，影响免疫系统识别
+        /// </summary>
+        public float AntigenStrength = 50;
+
+        /// <summary>
+        /// 在空气中的生存能力，值越高存活时间越长
+        /// </summary>
+        public int AirSurvivability = 50;
+
+        /// <summary>
+        ///表面携带率，影响通过接触传播的概率
+        /// </summary>
+        public int SurfacePersistence = 50;
+
+        /// <summary>
+        /// 突变率，影响病毒演化的速度
+        /// </summary>
+        public int MutationRate = 10;
+
+        /// <summary>
+        /// 最短潜伏期（tick）
+        /// </summary>
+        public int MinIncubationPeriod = 0;
+
+        /// <summary>
+        /// 最长潜伏期（tick）
+        /// </summary>
+        public int MaxIncubationPeriod = 3;
+
+        /// <summary>
+        /// 症状列表，病毒引起的症状
+        /// </summary>
+        public List<string> Symptoms = new List<string>();
+
+        /// <summary>
+        /// 毒株的版本
+        /// </summary>
+        public int StrainVersion = 1;
+
+        /// <summary>
+        /// 是否是人工培养的病毒
+        /// </summary>
+        public bool IsCultivated = false;
+
+        /// <summary>
+        /// 适应的最小温度
+        /// </summary>
+        public float MinAdaptedTemperature = -10f;
+
+        /// <summary>
+        /// 适应的最大温度
+        /// </summary>
+        public float MaxAdaptedTemperature = 40f;
+
+        /// <summary>
+        /// 目标种族列表，表示哪些种族可能被感染
+        /// </summary>
+        public List<string> TargetRace = new List<string>();
+
+        /// <summary>
+        /// 特殊毒株基因，用于病毒的特性
+        /// </summary>
+        public List<string> SpecialStrainGene = new List<string>();
+
+        /// <summary>
+        /// 毒株基因的列表
+        /// </summary>
+        public List<string> StrainGene = new List<string>();
+
+        /// <summary>
+        /// 是否通过体液传播
+        /// </summary>
+        public bool FluidTransmission = false;
+
+        /// <summary>
+        /// 是否是机械病毒
+        /// </summary>
+        public bool IsMechVirus = false;
+
+        /// <summary>
+        /// 是否是僵尸病毒
+        /// </summary>
+        public bool IsZombieVirus = false;
+
+        /// <summary>
+        /// 是否产生正面效果
+        /// </summary>
+        public bool IsPositiveEffect = false;
+
+        /// <summary>
+        /// 是否有永久效果
+        /// </summary>
+        public bool IsPermanentEffect = false;
+
+        /// <summary>
+        /// 毒株的唯一标识符
+        /// </summary>
+        public string UniqueID = "000";
+
+        /// <summary>
+        /// 感染的严重程度
+        /// </summary>
+        public float InfectionSeverity = 1f;
+
+        /// <summary>
+        /// 是否已经被中和
+        /// </summary>
+        public bool IsNeutralized = false;
+
+        /// <summary>
+        ///需要治疗等级
+        /// </summary>
+        public int NeedHealLeve = 0;
+        /// <summary>
+        /// 默认构造函数
+        /// </summary>
+        public VirusStrain()
+        {
+        }
+
+        /// <summary>
+        /// 返回毒株的唯一加载ID，用于数据的唯一标识
+        /// </summary>
+        public string GetUniqueLoadID()
+        {
+            return UniqueID;  // 返回唯一标识符
+        }
+
+        /// <summary>
+        /// 实现 IExposable 接口，用于序列化和反序列化病毒毒株数据
+        /// </summary>
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref Type, "type", VirusCategory.PandemicVirus);
+            Scribe_Values.Look(ref StrainName, "strainName", "未知毒株");
+            Scribe_Values.Look(ref CanInfectAnimals, "canInfectAnimals", false);
+            Scribe_Values.Look(ref Infectivity, "infectivity", 50);
+            Scribe_Values.Look(ref Pathogenicity, "pathogenicity", 50);
+            Scribe_Values.Look(ref AntigenStrength, "antigenStrength", 50f);
+            Scribe_Values.Look(ref AirSurvivability, "airSurvivability", 50);
+            Scribe_Values.Look(ref SurfacePersistence, "surfacePersistence", 50);
+            Scribe_Values.Look(ref MutationRate, "mutationRate", 10);
+            Scribe_Values.Look(ref MinIncubationPeriod, "minIncubationPeriod", 0);
+            Scribe_Values.Look(ref MaxIncubationPeriod, "maxIncubationPeriod", 3);
+            Scribe_Collections.Look(ref Symptoms, "symptoms", LookMode.Value);
+            Scribe_Values.Look(ref StrainVersion, "strainVersion", 1);
+            Scribe_Values.Look(ref IsCultivated, "isCultivated", false);
+            Scribe_Values.Look(ref MinAdaptedTemperature, "minAdaptedTemperature", -10f);
+            Scribe_Values.Look(ref MaxAdaptedTemperature, "maxAdaptedTemperature", 40f);
+            Scribe_Collections.Look(ref TargetRace, "targetRace", LookMode.Value);
+            Scribe_Collections.Look(ref SpecialStrainGene, "specialStrainGene", LookMode.Value);
+            Scribe_Collections.Look(ref StrainGene, "strainGene", LookMode.Value);
+            Scribe_Values.Look(ref FluidTransmission, "fluidTransmission", false);
+            Scribe_Values.Look(ref IsMechVirus, "isMechVirus", false);
+            Scribe_Values.Look(ref IsZombieVirus, "isZombieVirus", false);
+            Scribe_Values.Look(ref IsPositiveEffect, "isPositiveEffect", false);
+            Scribe_Values.Look(ref IsPermanentEffect, "isPermanentEffect", false);
+            Scribe_Values.Look(ref UniqueID, "uniqueID", "000");
+            Scribe_Values.Look(ref InfectionSeverity, "infectionSeverity", 1f);
+            Scribe_Values.Look(ref IsNeutralized, "isNeutralized", false);
+            Scribe_Values.Look(ref NeedHealLeve, "NeedHealLeve", 0);
+        }
+
+        public VirusStrain Clone()
+        {
+            return new VirusStrain
+            {
+                NeedHealLeve = this.NeedHealLeve,
+                Type = this.Type,
+                StrainName = this.StrainName,
+                CanInfectAnimals = this.CanInfectAnimals,
+                Infectivity = this.Infectivity,
+                Pathogenicity = this.Pathogenicity,
+                AntigenStrength = this.AntigenStrength,
+                AirSurvivability = this.AirSurvivability,
+                SurfacePersistence = this.SurfacePersistence,
+                MutationRate = this.MutationRate,
+                MinIncubationPeriod = this.MinIncubationPeriod,
+                MaxIncubationPeriod = this.MaxIncubationPeriod,
+                Symptoms = new List<string>(this.Symptoms ?? new List<string>()),
+                StrainVersion = this.StrainVersion,
+                IsCultivated = this.IsCultivated,
+                MinAdaptedTemperature = this.MinAdaptedTemperature,
+                MaxAdaptedTemperature = this.MaxAdaptedTemperature,
+                TargetRace = new List<string>(this.TargetRace ?? new List<string>()),
+                SpecialStrainGene = new List<string>(this.SpecialStrainGene ?? new List<string>()),
+                StrainGene = new List<string>(this.StrainGene ?? new List<string>()),
+                FluidTransmission = this.FluidTransmission,
+                IsMechVirus = this.IsMechVirus,
+                IsZombieVirus = this.IsZombieVirus,
+                IsPositiveEffect = this.IsPositiveEffect,
+                IsPermanentEffect = this.IsPermanentEffect,
+                UniqueID = this.UniqueID, // 如需实例唯一，可在外部重新分配
+                InfectionSeverity = this.InfectionSeverity,
+                IsNeutralized = this.IsNeutralized,
+            };
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibDefOf\PrLibHediffDefOf.cs
+=
+.
+﻿
+
+using RimWorld;
+using Verse;
+
+namespace PromotionLib.PrLibDefOf
+{
+
+
+    [DefOf]
+    public class PrLibHediffDefOf
+    {
+        public static HediffDef PRON_Antibiotic;
+        static PrLibHediffDefOf()
+        {
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibDefOf\ValueDef.cs
+=
+.
+﻿
+using RimWorld;
+
+namespace PromotionLib.PrLibDefOf
+{
+    
+    [DefOf]
+    public static class ValueDef
+    {
+        // 你的 Def 声明（这部分是正确的）
+        public static StatDef Disinfection_level;
+        public static StatDef Sealing_level;
+
+        // 静态构造函数（这部分也是正确的）
+        static ValueDef()
+        {
+        }
+    }
+}.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibHediffComp\HediffComp_Antibiotic.cs
+=
+.
+﻿using PromotionLib.PrLibThingComp;
+using RimWorld;
+using System.Collections.Generic;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.PrLibHediffComp
+{
+    public class HediffCompProperties_Antibiotic : HediffCompProperties
+    {
+        public HediffCompProperties_Antibiotic()
+        {
+            this.compClass = typeof(HediffComp_Antibiotic);
+        }
+    }
+    public class HediffComp_Antibiotic : HediffComp
+    {
+        public int cureLevel;
+        public float curePower;
+        public int ticksRemaining;
+        public void InitializeFromDrug(ThingComp_InfectionCure drugProps)
+        {
+            this.cureLevel = drugProps.CureLeve;
+            this.curePower = drugProps.CurePower;
+            this.ticksRemaining = drugProps.CureMaintainTick; // 使用持续时间，而不是治疗时间
+        }
+
+        public override void CompPostTick(ref float severityAdjustment)
+        {
+            Pawn pawn = this.parent.pawn;
+            if (pawn.DestroyedOrNull() || pawn.Dead) return;
+            ticksRemaining--;
+            if (ticksRemaining <= 0)
+            {
+                pawn.health.RemoveHediff(this.parent);
+                return; // 移除后直接返回，不再执行治疗逻辑
+            }
+            if (pawn.IsHashIntervalTick(250))
+            {
+                List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+                for (int i = hediffs.Count - 1; i >= 0; i--)
+                {
+                    Hediff hediff = hediffs[i];
+                    HediffComp_VirusStrainContainer hediffComp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+
+                    if (hediffComp != null && hediffComp.virus != null)
+                    {
+                        if (hediffComp.virus.IsPositiveEffect == false)
+                        {
+                            float reduceAmount = 0f;
+                            // 使用本地存储的 cureLevel 和 curePower
+                            if (this.cureLevel >= hediffComp.virus.NeedHealLeve)
+                            {
+                                reduceAmount = this.curePower * Rand.Range(1f, 1.5f);
+                            }
+                            else
+                            {
+                                reduceAmount = this.curePower * Rand.Range(0.2f, 0.5f);
+                            }
+                            hediffComp.strainProgress = Mathf.Max(0f, hediffComp.strainProgress - reduceAmount);
+                        }
+                    }
+                }
+            }
+            if (pawn.IsHashIntervalTick(GenDate.TicksPerHour))
+            {
+                List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+                for (int i = hediffs.Count - 1; i >= 0; i--)
+                {
+                    Hediff hediff = hediffs[i];
+                    HediffComp_VirusStrainContainer hediffComp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                    if (hediffComp != null && hediffComp.virus != null)
+                    {
+                        if (hediffComp.strainProgress < 0.1)
+                        {
+                            float a = (1 - hediffComp.strainProgress * 10);
+                            if (Rand.Value < a)
+                            {
+                                pawn.health.RemoveHediff(hediff);
+                                Messages.Message($"{pawn.LabelShort} 的体内毒株已被清除。", pawn, MessageTypeDefOf.PositiveEvent);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public override void CompExposeData()
+        {
+            base.CompExposeData();
+            Scribe_Values.Look(ref ticksRemaining, "ticksRemaining", 0);
+            Scribe_Values.Look(ref cureLevel, "cureLevel", 0);
+            Scribe_Values.Look(ref curePower, "curePower", 0f);
+        }
+        public override string CompLabelInBracketsExtra => base.CompLabelInBracketsExtra + (ticksRemaining > 0 ? ticksRemaining.ToStringTicksToPeriod() : "");
+    }
+}.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibHediffComp\HediffComp_VirusStrainContainer.cs
+=
+.
+﻿using System;
+using System.Collections.Generic;
+using Verse;
+
+namespace PromotionLib.PrLibHediffComp
+{
+    public class HediffCompProperties_VirusStrainContainer : HediffCompProperties
+    {
+        public string type = "PromotionLib.VirusStrain";
+        public string uniqueID = "unknown";
+        public string strainName = "未命名毒株";
+        public int infectivity = 50;
+        public int pathogenicity = 50;
+        public float antigenStrength = 50;
+        public int airSurvivability = 50;
+        public int surfacePersistence = 50;
+        public int mutationRate = 10;
+        public int minIncubationPeriod = 0;
+        public int maxIncubationPeriod = 0;
+        public int strainVersion = 1;
+        public bool isCultivated = false;
+        public float minAdaptedTemperature = -10f;
+        public float maxAdaptedTemperature = 40f;
+        public int needHealLeve = 0;
+        public bool fluidTransmission = false;
+        public bool isMechVirus = false;
+        public bool isZombieVirus = false;
+        public bool isPositiveEffect = false;
+        public bool isPermanentEffect = false;
+        public bool isNeutralized = false;
+        public float infectionSeverity = 1f;
+        public bool CanInfectAnimals = false;
+        public List<string> symptoms = new List<string>();
+        public List<string> targetRace = new List<string>();
+        public List<string> strainGene = new List<string>();
+        public List<string> specialStrainGene = new List<string>();
+
+        public HediffCompProperties_VirusStrainContainer()
+        {
+            this.compClass = typeof(HediffComp_VirusStrainContainer);
+        }
+    }
+    public class HediffComp_VirusStrainContainer : HediffComp
+    {
+        public VirusStrain virus;
+
+        /// <summary>
+        /// 是否禁用空气传播
+        /// </summary>
+        public bool DisableAirborneTransmission = false;
+        /// <summary>
+        /// 是否禁用接触传播
+        /// </summary>
+        public bool isContactTransmissionEnabled = false;
+        /// <summary>
+        /// 是否禁用体液传播
+        /// </summary>
+        public bool isFluidTransmissionEnabled = false;
+        public HediffCompProperties_VirusStrainContainer Props => (HediffCompProperties_VirusStrainContainer)this.props;
+        
+        public float strainProgress = 0f;
+
+        public bool IncubationPeriod = false;
+
+        public float IncubationPeriodtick = 0f;
+        
+        // 添加标志来控制是否从 Props 初始化病毒
+        private bool skipPropsInitialization = false;
+        
+        public override void CompPostMake()
+        {
+            base.CompPostMake();
+            // 只有在没有跳过初始化标志时才从 Props 初始化
+            if (!skipPropsInitialization)
+            {
+                InitVirusFromProps();
+            }
+        }
+
+        public override void CompExposeData()
+        {
+            base.CompExposeData();
+            Scribe_Deep.Look(ref virus, "virus");
+            Scribe_Values.Look(ref skipPropsInitialization, "skipPropsInitialization", false);
+            Scribe_Values.Look(ref DisableAirborneTransmission, "DisableAirborneTransmission", false);
+            Scribe_Values.Look(ref isContactTransmissionEnabled, "isContactTransmissionEnabled", false);
+            Scribe_Values.Look(ref isFluidTransmissionEnabled, "isFluidTransmissionEnabled", false);
+            Scribe_Values.Look(ref strainProgress, "strainProgress", 0f);
+            Scribe_Values.Look(ref IncubationPeriodtick, "IncubationPeriodtick", 0f);
+            Scribe_Values.Look(ref IncubationPeriod, "IncubationPeriod", false);
+        }
+        
+        /// <summary>
+        /// 直接设置病毒实例，跳过从 Props 的初始化
+        /// </summary>
+        /// <param name="virusInstance">要设置的病毒实例</param>
+        public void SetVirusDirectly(VirusStrain virusInstance)
+        {
+            skipPropsInitialization = true;
+            virus = virusInstance;
+            VirusConstraints.VirusStrainApply(ref virus); 
+            if (virus != null)
+            {
+                strainProgress = virus.InfectionSeverity;
+                IncubationPeriodtick = Rand.Range((int)virus.MinIncubationPeriod, (int)virus.MaxIncubationPeriod + 1);
+            }
+        }
+        private void InitVirusFromProps()
+        {
+            try
+            {
+                // 创建病毒实例
+                if (virus == null)
+                {
+                    virus = new VirusStrain();
+                }
+                if (Enum.TryParse(Props.type, true, out VirusCategory result))
+                {
+                    virus.Type = result;
+                }
+                else
+                {
+                    // 解析失败时的处理
+                    virus.Type = VirusCategory.PandemicVirus; // 默认值
+                }
+                virus.NeedHealLeve = Props.needHealLeve;
+                virus.UniqueID = Props.uniqueID;
+                virus.StrainName = Props.strainName;
+                virus.Infectivity = Props.infectivity;
+                virus.Pathogenicity = Props.pathogenicity;
+                virus.AntigenStrength = Props.antigenStrength;
+                virus.AirSurvivability = Props.airSurvivability;
+                virus.SurfacePersistence = Props.surfacePersistence;
+                virus.MutationRate = Props.mutationRate;
+                virus.MinIncubationPeriod = Props.minIncubationPeriod;
+                virus.MaxIncubationPeriod = Props.maxIncubationPeriod;
+                virus.StrainVersion = Props.strainVersion;
+                virus.IsCultivated = Props.isCultivated;
+                virus.MinAdaptedTemperature = Props.minAdaptedTemperature;
+                virus.MaxAdaptedTemperature = Props.maxAdaptedTemperature;
+                virus.FluidTransmission = Props.fluidTransmission;
+                virus.IsMechVirus = Props.isMechVirus;
+                virus.IsZombieVirus = Props.isZombieVirus;
+                virus.IsPositiveEffect = Props.isPositiveEffect;
+                virus.IsPermanentEffect = Props.isPermanentEffect;
+                virus.InfectionSeverity = Props.infectionSeverity;
+                virus.IsNeutralized = Props.isNeutralized;
+                virus.CanInfectAnimals = Props.CanInfectAnimals;
+                virus.Symptoms = new System.Collections.Generic.List<string>(Props.symptoms);
+                virus.TargetRace = new System.Collections.Generic.List<string>(Props.targetRace);
+                virus.StrainGene = new System.Collections.Generic.List<string>(Props.strainGene);
+                virus.SpecialStrainGene = new System.Collections.Generic.List<string>(Props.specialStrainGene);
+                VirusConstraints.VirusStrainApply(ref virus);
+                strainProgress = virus.InfectionSeverity; // 初始感染进度为感染严重度的20倍
+                IncubationPeriodtick = Rand.Range((int)virus.MinIncubationPeriod, (int)virus.MaxIncubationPeriod + 1); // 包含0，不包含100
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[VirusSystem] 病毒创建失败：{ex}");
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibJob\JobDiver_InfectionCure.cs
+=
+.
+﻿using PromotionLib.PrLibThingComp;
+using RimWorld;
+using System.Collections.Generic;
+using Verse;
+using Verse.AI;
+
+namespace PromotionLib.PrLibJob
+{
+    public class JobDiver_InfectionCure : JobDriver
+    {
+        private const TargetIndex PatientInd = TargetIndex.A;
+        private const TargetIndex MedicineInd = TargetIndex.B;
+
+        protected Pawn Patient => (Pawn)job.GetTarget(PatientInd).Thing;
+        protected Thing MedicineInHand => pawn.carryTracker.CarriedThing;
+
+        //用于存储工作进度
+        private float totalWorkNeeded = 300f;
+        private float workLeft = 300f;
+
+        public override bool TryMakePreToilReservations(bool errorOnFailed)
+        {
+            //预留病人和药物
+            return pawn.Reserve(Patient, job, 1, -1, null, errorOnFailed) &&
+                   pawn.Reserve(job.GetTarget(MedicineInd), job, 1, -1, null, errorOnFailed);
+        }
+
+        protected override IEnumerable<Toil> MakeNewToils()
+        {
+            //各种失败条件检查
+            this.FailOnDestroyedOrNull(PatientInd);
+            this.FailOnAggroMentalState(PatientInd); //病人发狂时不治疗
+            this.FailOn(() => !Patient.InBed());
+            //走到药物位置
+            yield return Toils_Goto.GotoThing(MedicineInd, PathEndMode.ClosestTouch)
+                .FailOnForbidden(MedicineInd);
+            //拿起药物
+            yield return Toils_Haul.StartCarryThing(MedicineInd, false, false, false);
+            //检查是否成功拿起药物（防御性编程）
+            Toil checkCarry = new Toil();
+            checkCarry.initAction = () =>
+            {
+                if (pawn.carryTracker.CarriedThing == null)
+                {
+                    //没拿起来
+                    EndJobWith(JobCondition.Incompletable);
+                }
+                else
+                {
+                    job.SetTarget(MedicineInd, pawn.carryTracker.CarriedThing);
+                }
+            };
+            yield return checkCarry;
+
+            //走到病人身边
+            yield return Toils_Goto.GotoThing(PatientInd, PathEndMode.Touch);
+            Toil treatToil = new Toil();
+            treatToil.defaultCompleteMode = ToilCompleteMode.Never;
+
+            treatToil.initAction = () =>
+            {
+                //获取组件定义的时长
+                var comp = MedicineInHand?.TryGetComp<ThingComp_InfectionCure>();
+                //默认300工作量
+                totalWorkNeeded = comp != null ? comp.CureTick : 300f;
+                workLeft = totalWorkNeeded;
+
+                //让小人站住别动
+                pawn.pather.StopDead();
+            };
+
+            treatToil.tickAction = () =>
+            {
+                //让医生始终面向病人
+                pawn.rotationTracker.FaceTarget(Patient);
+                float speed = pawn.GetStatValue(StatDefOf.MedicalTendSpeed);
+                // 扣除工作量
+                workLeft -= speed;
+                // 判断工作是否完成
+                if (workLeft <= 0)
+                {
+                    // 只有这里调用 ReadyForNextToil，才会进入下一步
+                    treatToil.actor.jobs.curDriver.ReadyForNextToil();
+                }
+            };
+
+            //进度条UI
+            treatToil.WithProgressBar(PatientInd, () => 1f - (workLeft / totalWorkNeeded));
+
+            //药物没了就失败
+            treatToil.FailOnDestroyedOrNull(MedicineInd);
+
+            yield return treatToil;
+
+            //治疗结算（施加效果）
+            Toil applyEffectToil = new Toil();
+            applyEffectToil.initAction = () =>
+            {
+                Pawn patient = Patient;
+                Thing medicine = MedicineInHand;
+
+                if (patient != null && !patient.Destroyed && medicine != null)
+                {
+                    ThingComp_InfectionCure comp = medicine.TryGetComp<ThingComp_InfectionCure>();
+                    if (comp != null)
+                    {
+                        comp.CurePawn(patient);
+                    }
+                }
+            };
+            applyEffectToil.defaultCompleteMode = ToilCompleteMode.Instant;
+            yield return applyEffectToil;
+        }
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref workLeft, "workLeft", 300f);
+            Scribe_Values.Look(ref totalWorkNeeded, "totalWorkNeeded", 300f);
+        }
+    }
+}.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibJob\JobDiver_WaitForCure.cs
+=
+.
+﻿using PromotionLib.PrLibDefOf;
+using RimWorld;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Verse;
+using Verse.AI;
+
+namespace PromotionLib.PrLibJob
+{
+    public class JobDiver_WaitForCure: JobDriver
+    {
+        private const TargetIndex BedIndex = TargetIndex.A;
+
+        public override bool TryMakePreToilReservations(bool errorOnFailed)
+        {
+            return pawn.Reserve(job.GetTarget(BedIndex), job, 1, -1, null, errorOnFailed);
+        }
+
+        protected override IEnumerable<Toil> MakeNewToils()
+        {
+            yield return Toils_Bed.GotoBed(BedIndex);
+            Toil layDown = Toils_LayDown.LayDown(BedIndex, true, false, false, false);
+            layDown.AddEndCondition(() =>
+            {
+                if (pawn.health.hediffSet.HasHediff(PrLibHediffDefOf.PRON_Antibiotic))
+                {
+                    return JobCondition.Succeeded;
+                }
+                return JobCondition.Ongoing;
+            });
+
+            yield return layDown;
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibThingComp\ThingComp_InfectionCure.cs
+=
+.
+﻿using PromotionLib.PrLibDefOf;
+using RimWorld;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.PrLibThingComp
+{
+    public class ThingCompProperties_InfectionCure : CompProperties
+    {
+        public int CureLeve;
+        public float CurePower;
+        public int CureTick; // 如果没有设置随机范围，可以用这个做固定值
+        public Vector2 CureMaintainTime; // x = 最小值, y = 最大值
+
+        public ThingCompProperties_InfectionCure()
+        {
+            compClass = typeof(ThingComp_InfectionCure);
+        }
+    }
+
+    public class ThingComp_InfectionCure : ThingComp
+    {
+        public int CureLeve;
+        public float CurePower;
+        public int CureTick;
+        public int CureMaintainTick; // 药物效果持续时间
+        public ThingCompProperties_InfectionCure Props => (ThingCompProperties_InfectionCure)this.props;
+
+        public override void Initialize(CompProperties props)
+        {
+            base.Initialize(props);
+            CureLeve = Props.CureLeve;
+            CurePower = Props.CurePower;
+            // CureTick 是治疗读条时间，直接使用配置值
+            CureTick = Props.CureTick;
+            
+            // CureMaintainTime 是药物效果持续时间，可以是随机范围
+            if (Props.CureMaintainTime != Vector2.zero)
+            {
+                CureMaintainTick = (int)Rand.Range(Props.CureMaintainTime.x, Props.CureMaintainTime.y);
+            }
+            else
+            {
+                CureMaintainTick = Props.CureTick; // 如果没设置，默认等于治疗时间
+            }
+        }
+
+        public void CurePawn(Pawn pawn)
+        {
+            Hediff hediff = pawn.health.hediffSet.GetFirstHediffOfDef(PrLibHediffDefOf.PRON_Antibiotic);
+            if (hediff != null)
+            {
+                pawn.health.RemoveHediff(hediff);
+            }
+            hediff  = pawn.health.AddHediff(PrLibHediffDefOf.PRON_Antibiotic);
+            var antibioticComp = hediff.TryGetComp<PrLibHediffComp.HediffComp_Antibiotic>();
+            if (antibioticComp != null)
+            {
+                antibioticComp.InitializeFromDrug(this);
+            }
+            Thing thing = this.parent as Thing;
+            thing.SplitOff(1).Destroy();
+        }
+
+        public override void PostExposeData()
+        {
+            base.PostExposeData();
+            Scribe_Values.Look(ref CureLeve, "CureLeve", 0);
+            Scribe_Values.Look(ref CurePower, "CurePower", 0f);
+            Scribe_Values.Look(ref CureTick, "CureTick", 0);
+            Scribe_Values.Look(ref CureMaintainTick, "CureMaintainTick", 0);
+        }
+    }
+}.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibWorkGiver\WorkGive_InfectionCure.cs
+=
+.
+﻿using PromotionLib.PrLibDefOf;
+using PromotionLib.PrLibHediffComp;
+using PromotionLib.PrLibThingComp;
+using RimWorld;
+using System.Collections.Generic;
+using System.Linq;
+using Verse;
+using Verse.AI;
+
+namespace PromotionLib.PrLibWorkGiver
+{
+    public class WorkGive_InfectionCure : WorkGiver_Scanner
+    {
+        private static readonly JobDef InfectionCureJob = DefDatabase<JobDef>.GetNamed("Job_InfectionCure");
+        public override ThingRequest PotentialWorkThingRequest => ThingRequest.ForGroup(ThingRequestGroup.Pawn);
+
+        public override bool HasJobOnThing(Pawn worker, Thing t, bool forced = false)
+        {
+            Pawn patient = t as Pawn;
+            if (patient == null || patient == worker) return false;
+            if (!patient.InBed())
+            {
+                return false;
+            }
+            if (patient.health.hediffSet.HasHediff(PrLibHediffDefOf.PRON_Antibiotic))
+            {
+                return false;
+            }
+
+            List<VirusStrain> viruses = FindPawnIsInfectionVirus(patient);
+            if (viruses.Count < 1)
+            {
+                return false;
+            }
+
+            // 检查医生是否能预留病人
+            if (!worker.CanReserve(patient, 1, -1, null, forced))
+            {
+                return false;
+            }
+
+            viruses = viruses.OrderByDescending(v => v.NeedHealLeve).ToList();
+
+            // 检查是否有药物
+            foreach (var virus in viruses)
+            {
+                Thing medicine = FindComponentMedicine(worker, virus);
+                if (medicine != null)
+                {
+                    if (worker.CanReserve(medicine, 1, -1, null, forced))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public override Job JobOnThing(Pawn worker, Thing t, bool forced = false)
+        {
+            Pawn patient = t as Pawn;
+            if (patient == null) return null;
+
+            // 双重保险：再次检查是否在床上
+            if (!patient.InBed()) return null;
+
+            List<VirusStrain> viruses = FindPawnIsInfectionVirus(patient);
+            viruses = viruses.OrderByDescending(v => v.NeedHealLeve).ToList();
+
+            foreach (var virus in viruses)
+            {
+                Thing medicine = FindComponentMedicine(worker, virus);
+                if (medicine != null && !medicine.Destroyed)
+                {
+                    if (worker.CanReserve(medicine, 1, -1, null, forced))
+                    {
+                        Job job = JobMaker.MakeJob(InfectionCureJob, patient, medicine);
+                        job.count = 1;
+                        return job;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // 下面的辅助函数保持不变
+        private List<VirusStrain> FindPawnIsInfectionVirus(Pawn patient)
+        {
+            List<VirusStrain> Virus = new List<VirusStrain>();
+            List<Hediff> hediffs = patient.health.hediffSet.hediffs;
+            foreach (var hediff in hediffs)
+            {
+                HediffComp_VirusStrainContainer hediffComp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (hediffComp != null && hediffComp.virus != null)
+                {
+                    if (hediffComp.virus.IsPositiveEffect == false && hediffComp.IncubationPeriod)
+                    {
+                        Virus.Add(hediffComp.virus);
+                    }
+                }
+            }
+            return Virus;
+        }
+
+        private Thing FindComponentMedicine(Pawn worker, VirusStrain virus)
+        {
+            System.Predicate<Thing> validator = (Thing x) =>
+            {
+                if (x.IsForbidden(worker) || !worker.CanReserve(x))
+                    return false;
+
+                ThingComp_InfectionCure thingComp = x.TryGetComp<ThingComp_InfectionCure>();
+                if (thingComp == null) return false;
+
+                return thingComp.CureLeve >= virus.NeedHealLeve;
+            };
+
+            return GenClosest.ClosestThingReachable(
+                worker.Position,
+                worker.Map,
+                ThingRequest.ForGroup(ThingRequestGroup.HaulableEver),
+                PathEndMode.ClosestTouch,
+                TraverseParms.For(worker),
+                9999f,
+                validator
+            );
+        }
+    }
+}.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\PrLibWorkGiver\WorkGive_WaitForCure.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using RimWorld;
+using Verse;
+using Verse.AI;
+
+namespace PromotionLib.PrLibWorkGiver
+{
+    public class WorkGive_WaitForCure : WorkGiver_Scanner
+    {
+        private JobDef WaitForCure = DefDatabase<JobDef>.GetNamed("Job_WaitForCure");
+
+
+        public override Job NonScanJob(Pawn pawn)
+        {
+            if (pawn.Drafted)
+            {
+                return null;
+            }
+            if (pawn.CurJobDef == WaitForCure) return null;
+            if (pawn.health.hediffSet.HasHediff(PrLibDefOf.PrLibHediffDefOf.PRON_Antibiotic))
+            {
+                return null;
+            }
+            if (!FindPawnIsInfectionVirus(pawn))
+            {
+                return null;
+            }
+            if (pawn.InBed())
+            {
+                return null;
+            }
+            if (!FindPawnIsInfectionVirus(pawn)) return null;
+            if (pawn.InBed() && pawn.CurrentBed().Medical)
+            {
+                return null;
+            }
+            Building_Bed bed = RestUtility.FindPatientBedFor(pawn);
+            if (bed == null)
+            {
+                bed = RestUtility.FindBedFor(pawn);
+            }
+            if (bed == null)
+            {
+                return null;
+            }
+
+            Job job = JobMaker.MakeJob(WaitForCure, bed);
+            return job;
+        }
+        private bool FindPawnIsInfectionVirus(Pawn patient)
+        {
+            if (patient.health?.hediffSet?.hediffs == null) return false;
+
+            foreach (var hediff in patient.health.hediffSet.hediffs)
+            {
+                HediffComp_VirusStrainContainer hediffComp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (hediffComp?.virus != null)
+                {
+                    if (hediffComp.virus.IsPositiveEffect == false && hediffComp.IncubationPeriod)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+}.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Projectile\Bullet_ClusterBullet.cs
+=
+.
+using RimWorld;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.Projectile
+{
+    /// <summary>
+    /// 子抛射体（仅贝塞尔曲线弹道；无任何拖尾/特效改动）
+    /// XML: <thingClass>PromotionLib.Projectile.Bullet_ClusterBullet</thingClass>
+    /// 伤害/半径/速度仍由 XML 控制
+    /// </summary>
+    public class Bullet_ClusterBullet : Projectile_Explosive
+    {
+        // —— 可调参数 —— 
+        private const bool UseBezierCurve = true;  // 设为 false 可随时恢复直线弹道
+        private const float CtrlDistCells = 7f;    // 控制点沿前进方向的距离（格）
+        private const float CtrlSideNoise = 2f;    // 控制点横向随机（格，左右摆幅）
+        private const float MaxCtrlDistFrac = 0.7f; // 控制点距离不超过水平距离的此比例，避免短程过度弯曲
+
+        // —— 运行时 —— 
+        private bool _inited;
+        private int _totalTicksToImpact = -1;
+        private Vector3 _ctrlPoint; // 贝塞尔控制点（世界坐标）
+
+        // —— 拖尾参数（白色半透明） ——
+        private const int TrailSpawnIntervalTicks = 1; // 生成频率：每 N tick 生成 1 个拖尾粒子
+        private const float TrailMoteScale = 0.35f;    // 拖尾粒子缩放
+        private static readonly Color TrailColor = new Color(1f, 1f, 1f, 0.35f); // 半透明白
+        private int _lastTrailSpawnTick = -9999;       // 上次生成 tick
+
+        /// <summary>
+        /// 只改“精确位置”：XZ 走贝塞尔，Y（高度/图层）沿用基类，保证与 flyOverhead/碰撞一致
+        /// </summary>
+        public override Vector3 ExactPosition
+        {
+            get
+            {
+                Vector3 basePos = base.ExactPosition;
+                if (!UseBezierCurve) return basePos;
+
+                EnsureInitialized();
+
+                float t = 1f - (float)this.ticksToImpact / Mathf.Max(1, _totalTicksToImpact);
+                t = Mathf.Clamp01(t);
+
+                // 二次贝塞尔（xz）
+                Vector2 p0 = new Vector2(this.origin.x, this.origin.z);
+                Vector2 p1 = new Vector2(_ctrlPoint.x, _ctrlPoint.z);
+                Vector2 p2 = new Vector2(this.destination.x, this.destination.z);
+
+                float s = 1f - t;
+                Vector2 b = s * s * p0 + 2f * s * t * p1 + t * t * p2;
+
+                return new Vector3(b.x, basePos.y, b.y);
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (_inited) return;
+            _inited = true;
+
+            _totalTicksToImpact = Mathf.Max(1, this.ticksToImpact);
+
+            // 计算控制点：起点→终点方向 CtrlDist，再加横向随机（仅 xz 平面）
+            Vector3 o = this.origin;
+            Vector3 d = this.destination;
+            Vector3 dir = d - o; dir.y = 0f;
+            float horizLen = new Vector2(dir.x, dir.z).magnitude;
+
+            Vector3 dirN = horizLen > 1e-6f ? dir / horizLen : new Vector3(1f, 0f, 0f);
+            Vector3 perp = new Vector3(-dirN.z, 0f, dirN.x);
+
+            // 控制点距离限制，避免目标很近时弯得过头
+            float ctrlForward = Mathf.Min(CtrlDistCells, horizLen * MaxCtrlDistFrac);
+            float side = Rand.Range(-CtrlSideNoise, CtrlSideNoise);
+
+            _ctrlPoint = o + dirN * ctrlForward + perp * side;
+        }
+
+        protected override void Tick()
+        {
+            // 先在当前位置生成拖尾，再推进逻辑（这样拖尾更贴合实际轨迹）
+            try
+            {
+                TrySpawnWhiteTrailMote();
+            }
+            catch (System.Exception ex)
+            {
+                // 记录错误但不中断子弹逻辑
+                Log.Warning($"Bullet_ClusterBullet拖尾生成失败: {ex.Message}");
+            }
+            base.Tick();
+        }
+
+        protected override void Impact(Thing hitThing, bool blockedByShield = false)
+        {
+            Map map = this.Map;
+            IntVec3 center = this.Position;
+            base.Impact(hitThing, blockedByShield);
+        }
+        /// <summary>
+        /// 生成白色半透明拖尾粒子（使用 Mote_Smoke，0 速度，叠加白色半透明颜色）。
+        /// 为避免性能压力，按 TrailSpawnIntervalTicks 控制频率。
+        /// </summary>
+        private void TrySpawnWhiteTrailMote()
+        {
+            // 地图/生成状态校验
+            if (this.Map == null || !this.Spawned || this.Destroyed) return;
+            
+            // 检查子弹是否还有效
+            if (this.ticksToImpact <= 0) return;
+
+            int currentTick = Find.TickManager.TicksGame;
+            if (currentTick - _lastTrailSpawnTick < TrailSpawnIntervalTicks)
+            {
+                return;
+            }
+            _lastTrailSpawnTick = currentTick;
+
+            // 取当前精确位置，并将 y 设置到 Mote 图层高度，避免与地形/物体深度冲突
+            Vector3 motePos = this.ExactPosition;
+            if (float.IsNaN(motePos.x) || float.IsNaN(motePos.y) || float.IsNaN(motePos.z)) return;
+            
+            motePos.y = AltitudeLayer.MoteOverhead.AltitudeFor();
+
+            // 尝试使用 FleckMaker 生成白色拖尾（更轻量级的方法）
+            try
+            {
+                // 使用 FleckMaker 生成白色烟雾效果
+                FleckMaker.ThrowSmoke(motePos, this.Map, TrailMoteScale);
+                
+                // 如果需要更精确的颜色控制，可以尝试创建自定义的 Fleck
+                // 但基础版本先使用 ThrowSmoke 确保兼容性
+            }
+            catch (System.Exception ex)
+            {
+                // 如果 FleckMaker 失败，记录但不中断
+                Log.Warning($"Bullet_ClusterBullet拖尾生成失败: {ex.Message}");
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Projectile\Bullet_ClusterRocket.cs
+=
+.
+using RimWorld;
+using UnityEngine;
+using Verse;
+using System.Collections.Generic;
+
+namespace PromotionLib.Projectile
+{
+    /// <summary>
+    /// 顶飞集束火箭：命中后主爆 + 同心环（每圈等角均分）发射子抛射体
+    /// 主抛射体 XML 需启用 <flyOverhead>true</flyOverhead>（按你原设）
+    /// 子抛射体的速度/伤害/半径在其 XML（Bullet_ClusterBullet）里配置
+    /// </summary>
+    /// 
+    public class Bullet_ClusterRocketExt : DefModExtension
+    {
+        public int RingCount = 5;
+        public string clusterBulletDefName = "Bullet_ClusterBullet";
+        public List<int> PerRingCounts = new List<int> { 6, 12, 18, 24, 30 };
+        // 半径配置：首圈半径 + 每圈递增
+        public float FirstRingRadius = 3f; // 第1圈半径（格）
+        public float RingSpacing = 4f;  // 相邻两圈半径差（格）
+    }
+    public class Bullet_ClusterRocket : Projectile_Explosive
+    {
+        // ===== 可调参数（按需改） =====
+
+        // 圈数
+        public static int RingCount = 5;
+        //子单体定义名
+        public static string clusterBulletDefName = "Bullet_ClusterBullet";
+        // 每圈数量：两种方式 ②优先生效 → ①兜底
+        // ② 若提供数组，则按圈使用（不足的圈用 ① 的默认值）
+        public static List<int> PerRingCounts = new List<int> { 6, 12, 18, 24, 30 }; // 示例：第1圈6发，第2圈10发，第3圈14发
+        // ① 若没配或超出数组，就用这个统一数量
+        private const int PerRingDefaultCount = 8;
+
+        // 半径配置：首圈半径 + 每圈递增
+        public static float FirstRingRadius = 3f; // 第1圈半径（格）
+        public static float RingSpacing = 4f;  // 相邻两圈半径差（格）
+
+        // 环上角度布局：是否让相邻圈相对错半步（更像“花瓣”）
+        private const bool AlternateRingOffset = true;
+
+        // 发射位置的小抖动，避免多发完全重合导致弹道重影
+        private const float LaunchJitter = 0.35f;
+
+        // 命中标志：烟花式更像直达落点，建议 IntendedTarget；要途中可被拦截则用 All
+        private const ProjectileHitFlags HitFlagsForRings = ProjectileHitFlags.IntendedTarget;
+
+        // ====== 逻辑 ======
+
+        // RimWorld 1.4+ 正确签名（包含 blockedByShield）
+        protected override void Impact(Thing hitThing, bool blockedByShield = false)
+        {
+            var ext = def.GetModExtension<Bullet_ClusterRocketExt>();
+            if (ext != null)
+            {
+                RingCount = ext.RingCount;
+                clusterBulletDefName = ext.clusterBulletDefName;
+                PerRingCounts = ext.PerRingCounts;
+                FirstRingRadius = ext.FirstRingRadius;
+                RingSpacing = ext.RingSpacing;
+            }
+            Map map = this.Map;
+            IntVec3 center = this.Position;
+            if (map == null || !center.InBounds(map))
+            {
+                base.Impact(hitThing, blockedByShield);
+                return;
+            }
+
+            // 主爆：沿用本弹 def 的半径/伤害
+            GenExplosion.DoExplosion(
+                center: center,
+                map: map,
+                radius: this.def.projectile.explosionRadius,
+                damType: this.def.projectile.damageDef ?? DamageDefOf.Bomb,
+                instigator: this.launcher,
+                damAmount: this.DamageAmount,
+                armorPenetration: this.ArmorPenetration,
+                weapon: this.equipmentDef,
+                projectile: this.def
+            );
+
+            // 发射同心环的子抛射体
+            SpawnClusterProjectiles_InRings(map, center);
+
+            // 主弹消失
+            this.Destroy(DestroyMode.Vanish);
+        }
+
+        /// <summary>
+        /// 按同心环发射子抛射体（每圈等角均分；一次性全部生成）
+        /// </summary>
+        private void SpawnClusterProjectiles_InRings(Map map, IntVec3 center)
+        {
+            // 子弹头 def
+            ThingDef clusterBulletDef = DefDatabase<ThingDef>.GetNamed(clusterBulletDefName, errorOnFail: false);
+            if (clusterBulletDef == null)
+            {
+                Log.Warning("[PromotionLib] 未找到子抛射体定义 Bullet_ClusterBullet，跳过集束生成。");
+                return;
+            }
+
+            // 给整朵“花”一个随机总旋转，让每次方向不完全一致
+            float globalAngleOffset = Rand.Range(0f, Mathf.PI * 2f);
+
+            for (int ring = 0; ring < Mathf.Max(0, RingCount); ring++)
+            {
+                // 本圈半径
+                float radius = Mathf.Max(1f, FirstRingRadius + RingSpacing * ring);
+
+                // 本圈数量（优先取数组）
+                int count =
+                    (PerRingCounts != null && ring < PerRingCounts.Count && PerRingCounts[ring] > 0)
+                    ? PerRingCounts[ring]
+                    : Mathf.Max(1, PerRingDefaultCount);
+
+                // 等角步进
+                float angleStep = Mathf.PI * 2f / count;
+
+                // 偏移设置：相邻圈可错开半步角，更像花瓣
+                float ringOffset = AlternateRingOffset && (ring % 2 == 1) ? angleStep * 0.5f : 0f;
+
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = globalAngleOffset + ringOffset + i * angleStep;
+                    Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+
+                    // 目标点：沿射线取该圈半径，并把越界点沿射线夹回地图内
+                    Vector3 targetV3 = center.ToVector3Shifted() + new Vector3(dir.x * radius, 0f, dir.y * radius);
+                    IntVec3 targetCell = ClampToMapBoundsAlongRay(center, targetV3.ToIntVec3(), map);
+
+                    // 发射位置（轻微抖动）
+                    Vector3 launchPos = center.ToVector3Shifted() +
+                        new Vector3(Rand.Range(-LaunchJitter, LaunchJitter), 0f, Rand.Range(-LaunchJitter, LaunchJitter));
+                    IntVec3 launchCell = launchPos.ToIntVec3();
+                    if (!launchCell.InBounds(map))
+                    {
+                        launchCell = center;
+                        launchPos = center.ToVector3Shifted();
+                    }
+
+                    // 先 Spawn 到地图，再 Launch
+                    var projThing = GenSpawn.Spawn(clusterBulletDef, launchCell, map, WipeMode.Vanish);
+                    var proj = projThing as Verse.Projectile;
+                    if (proj == null)
+                    {
+                        Log.Warning($"[PromotionLib] 生成的子抛射体不是 Verse.Projectile（def={clusterBulletDef.defName}，type={projThing?.GetType().FullName ?? "null"}）。检查 XML 的 <thingClass>。");
+                        continue;
+                    }
+
+                    proj.Launch(
+                        launcher: this.launcher,
+                        origin: launchPos,
+                        usedTarget: new LocalTargetInfo(targetCell),
+                        intendedTarget: new LocalTargetInfo(targetCell),
+                        hitFlags: HitFlagsForRings,
+                        preventFriendlyFire: false,
+                        equipment: null,
+                        targetCoverDef: null
+                    );
+                }
+            }
+        }
+
+        /// <summary>
+        /// 沿中心->目标的射线把目标夹回地图内（越界时逐步回退）
+        /// </summary>
+        private static IntVec3 ClampToMapBoundsAlongRay(IntVec3 origin, IntVec3 target, Map map)
+        {
+            if (target.InBounds(map)) return target;
+
+            Vector3 o = origin.ToVector3Shifted();
+            Vector3 t = target.ToVector3Shifted();
+            Vector3 d = t - o;
+            float len = d.magnitude;
+            if (len < 0.001f) return origin;
+
+            d /= len; // 单位向量
+
+            for (float s = len; s >= 1f; s -= 1f)
+            {
+                IntVec3 probe = (o + d * s).ToIntVec3();
+                if (probe.InBounds(map)) return probe;
+            }
+            return origin;
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Projectile\Bullet_healing_pistol.cs
+=
+.
+﻿using RimWorld;
+using System.Linq;
+using UnityEngine;
+using Verse;
+
+namespace PromotionLib.Projectile
+{
+    public class Bullet_healing_pistoExt : DefModExtension
+    {
+        // 追踪强度（越大越“吸”向目标）
+        public float TrackingStrength = 20f;
+        // 治疗品质范围 [0..1]
+        public float TendQualityMin = 0.20f;
+        public float TendQualityMax = 0.60f;
+    }
+    public class Bullet_healing_pistol : Bullet
+    {
+        // ==== 配置缓存（来自 DefModExtension）====
+        private float cfgTrackingStrength = 20f;
+        private float cfgTendQualityMin = 0.20f;
+        private float cfgTendQualityMax = 0.60f;
+
+        // 其余字段保持不变……
+        private Vector3 lastPosition;
+        private bool initialized = false;
+        private int creationTick = 0;
+        private LocalTargetInfo originalTarget;
+        private Thing launcher;
+
+        public override void SpawnSetup(Map map, bool respawningAfterLoad)
+        {
+            base.SpawnSetup(map, respawningAfterLoad);
+            var ext = def.GetModExtension<Bullet_healing_pistoExt>();
+            if (ext != null)
+            {
+                // 读取并规整参数
+                cfgTrackingStrength = Mathf.Max(0f, ext.TrackingStrength);
+
+                // 允许写反：自动取 min/max，并夹到 [0,1]
+                float a = Mathf.Clamp01(ext.TendQualityMin);
+                float b = Mathf.Clamp01(ext.TendQualityMax);
+                cfgTendQualityMin = Mathf.Min(a, b);
+                cfgTendQualityMax = Mathf.Max(a, b);
+            }
+        }
+
+        protected override void Tick()
+        {
+            if (!initialized) Initialize();
+
+            if (Find.TickManager.TicksGame - creationTick > 200)
+            {
+                ForceHitTarget();
+                return;
+            }
+            base.Tick();
+        }
+
+        private void Initialize()
+        {
+            lastPosition = base.ExactPosition; // 用基类位置初始化
+            initialized = true;
+            creationTick = Find.TickManager.TicksGame;
+            originalTarget = usedTarget;
+            FindRealTarget();
+        }
+
+        public override void Launch(Thing launcher, Vector3 origin, LocalTargetInfo usedTarget, LocalTargetInfo intendedTarget,
+            ProjectileHitFlags projectileHitFlags, bool preventFriendlyFire = false, Thing equipment = null, ThingDef targetCoverDef = null)
+        {
+            this.launcher = launcher;
+            this.originalTarget = usedTarget;
+            base.Launch(launcher, origin, usedTarget, intendedTarget, projectileHitFlags, preventFriendlyFire, equipment, targetCoverDef);
+        }
+
+        // ⚠ 你的原实现里这里用到了未定义的变量 origin；改为用当前弹体位置。
+        private void FindRealTarget()
+        {
+            try
+            {
+                if (launcher is Pawn shooterPawn)
+                {
+                    if (shooterPawn.CurJob?.targetA.HasThing == true)
+                        originalTarget = shooterPawn.CurJob.targetA;
+
+                    if (shooterPawn.stances?.curStance is Stance_Warmup warmupStance && warmupStance.focusTarg.IsValid)
+                        originalTarget = warmupStance.focusTarg;
+                }
+
+                if (!originalTarget.HasThing && originalTarget.Cell.IsValid)
+                {
+                    var list = originalTarget.Cell.GetThingList(Find.CurrentMap)
+                        .OfType<Pawn>().Where(p => p.Spawned && !p.Dead).ToList();
+                    if (list.Any())
+                    {
+                        var here = base.ExactPosition; // ← 用当前弹体位置做距离比较
+                        var nearest = list.OrderBy(p => Vector3.Distance(here, p.TrueCenter())).First();
+                        originalTarget = new LocalTargetInfo(nearest);
+                    }
+                }
+            }
+            catch { /* 保持原目标 */ }
+        }
+
+        public override Vector3 ExactPosition
+        {
+            get
+            {
+                if (!originalTarget.IsValid) return base.ExactPosition;
+
+                Vector3 targetPos = GetCurrentTargetPosition();
+                Vector3 basePos = base.ExactPosition;
+
+                float distance = Vector3.Distance(basePos, targetPos);
+                if (distance < 0.5f) return targetPos;
+
+                Vector3 dir = (targetPos - basePos).normalized;
+                // 使用配置化追踪强度
+                Vector3 trackingPos = basePos + dir * (cfgTrackingStrength * 0.1f);
+
+                lastPosition = trackingPos;
+                return trackingPos;
+            }
+        }
+
+        private Vector3 GetCurrentTargetPosition()
+        {
+            try
+            {
+                if (originalTarget.HasThing && originalTarget.Thing.Spawned)
+                    return originalTarget.Thing.TrueCenter();
+                return originalTarget.Cell.ToVector3Shifted();
+            }
+            catch { return originalTarget.Cell.ToVector3Shifted(); }
+        }
+
+        private void ForceHitTarget()
+        {
+            if (!originalTarget.IsValid) return;
+            try
+            {
+                Thing t = originalTarget.Thing;
+                Impact(t != null && t.Spawned ? t : null, false);
+                Destroy();
+            }
+            catch { Destroy(); }
+        }
+
+        protected override void Impact(Thing hitThing, bool blockedByShield = false)
+        {
+            if (hitThing == null && originalTarget.IsValid && originalTarget.Thing != null)
+                hitThing = originalTarget.Thing;
+
+            if (hitThing is Pawn pawn && pawn.health != null)
+                ApplyHealing(pawn);
+
+            base.Impact(hitThing, blockedByShield);
+        }
+
+        private void ApplyHealing(Pawn targetPawn)
+        {
+            if (targetPawn?.health == null) return;
+
+            var stimulantDef = DefDatabase<HediffDef>.GetNamed("HealingStimulant", errorOnFail: false);
+            if (stimulantDef != null)
+            {
+                var ex = targetPawn.health.hediffSet.GetFirstHediffOfDef(stimulantDef);
+                if (ex != null) targetPawn.health.RemoveHediff(ex);
+                var stim = HediffMaker.MakeHediff(stimulantDef, targetPawn);
+                stim.Severity = 1.0f;
+                targetPawn.health.AddHediff(stim);
+            }
+
+            // 用配置的品质范围进行包扎
+            var tendables = targetPawn.health.hediffSet.hediffs
+                .OfType<HediffWithComps>()
+                .Where(h => h.TendableNow(ignoreTimer: false) && !h.IsTended())
+                .ToList();
+
+            foreach (var h in tendables)
+            {
+                float q = Rand.Range(cfgTendQualityMin, cfgTendQualityMax); // ← 配置化
+                q = Mathf.Clamp01(q);
+                h.Tended(q, 1f);
+            }
+        }
+
+        // 可选：把配置序列化（读档不丢）
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref cfgTrackingStrength, "cfgTrackingStrength", 20f);
+            Scribe_Values.Look(ref cfgTendQualityMin, "cfgTendQualityMin", 0.20f);
+            Scribe_Values.Look(ref cfgTendQualityMax, "cfgTendQualityMax", 0.60f);
+            Scribe_Values.Look(ref creationTick, "creationTick", 0);
+            Scribe_Values.Look(ref initialized, "initialized", false);
+            Scribe_References.Look(ref launcher, "launcher");
+            Scribe_TargetInfo.Look(ref originalTarget, "originalTarget");
+        }
+    }
+
+}.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Properties\AssemblyInfo.cs
+=
+.
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// 有关程序集的一般信息由以下
+// 控制。更改这些特性值可修改
+// 与程序集关联的信息。
+[assembly: AssemblyTitle("PromotionLib")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("HP")]
+[assembly: AssemblyProduct("PromotionLib")]
+[assembly: AssemblyCopyright("Copyright © HP 2025")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// 将 ComVisible 设置为 false 会使此程序集中的类型
+//对 COM 组件不可见。如果需要从 COM 访问此程序集中的类型
+//请将此类型的 ComVisible 特性设置为 true。
+[assembly: ComVisible(false)]
+
+// 如果此项目向 COM 公开，则下列 GUID 用于类型库的 ID
+[assembly: Guid("50745533-fccd-449d-a9fb-56ff477ed242")]
+
+// 程序集的版本信息由下列四个值组成: 
+//
+//      主版本
+//      次版本
+//      生成号
+//      修订号
+//
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Utils\DictionaryExtensions.cs
+=
+.
+﻿using System;
+using System.Collections.Generic;
+
+namespace PromotionLib
+{
+    public static class DictionaryExtensions
+    {
+        /// <summary>
+        /// 从字典中移除所有满足条件的键值对。
+        /// 安全地在遍历期间标记并移除，避免枚举器冲突。
+        /// </summary>
+        public static void RemoveAll<TKey, TValue>(this Dictionary<TKey, TValue> dict, Func<KeyValuePair<TKey, TValue>, bool> predicate)
+        {
+            if (dict == null || predicate == null)
+                return;
+
+            List<TKey> keysToRemove = new List<TKey>();
+            foreach (var kv in dict)
+            {
+                if (predicate(kv))
+                    keysToRemove.Add(kv.Key);
+            }
+
+            foreach (var key in keysToRemove)
+            {
+                dict.Remove(key);
+            }
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Utils\InfectionUtility.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using PromotionLib.Utils;
+using System.Collections.Generic;
+using Verse;
+
+namespace PromotionLib
+{
+    /// <summary>
+    /// 感染工具类 - 提供病毒感染相关的实用方法
+    /// 用于检测和管理生物体的病毒感染状态
+    /// </summary>
+    public static class InfectionUtility
+    {
+        public const bool isDebug = false;
+
+        public static void RBDugInfo(string info)
+        {
+            if (isDebug)
+            {
+                Log.Message("[PromotionLib] " + info);
+            }
+        }
+
+        private static List<string> TargetRace = new List<string>();
+
+
+        /// <summary>
+        /// 处理两个Pawn之间通过体液发生的双向病毒传染。
+        /// </summary>
+        /// <returns>如果发生了至少一次成功的传染，则返回true；否则返回false。</returns>
+        public static bool PawnFluidTransmissionInfectedPawn(Pawn OnePawn, Pawn TowPawn, float contagionFactor = 1)
+        {
+            // 尝试 OnePawn -> TowPawn 的传染
+            bool transmissionOccurred1 = TryTransmitBetweenPawns(OnePawn, TowPawn, contagionFactor);
+
+            // 尝试 TowPawn -> OnePawn 的传染
+            bool transmissionOccurred2 = TryTransmitBetweenPawns(TowPawn, OnePawn, contagionFactor);
+
+            // 只要任意一次传染成功，就返回 true
+            return transmissionOccurred1 || transmissionOccurred2;
+        }
+
+        /// <summary>
+        /// 辅助函数：尝试将病毒从 source Pawn 传染给 target Pawn（单向）。
+        /// </summary>
+        /// <returns>如果发生了至少一次成功的传染，则返回true。</returns>
+        private static bool TryTransmitBetweenPawns(Pawn source, Pawn target, float contagionFactor)
+        {
+            bool hasBeenInfected = false;
+            // 1. 只获取源（source）身上的病毒
+            List<HediffComp_VirusStrainContainer> sourceVirusStrains = VirusStrainUtils.GetAllHediffComp_VirusStrainContainerForPawn(source);
+
+            foreach (HediffComp_VirusStrainContainer vs in sourceVirusStrains)
+            {
+                // 2. 检查病毒是否通过体液传播
+                if (!vs.virus.FluidTransmission)
+                {
+                    continue; // 如果不是，跳过这个病毒
+                }
+                if(vs.isFluidTransmissionEnabled)
+                {
+                    continue; // 如果体液传播被禁用，跳过这个病毒
+                }
+                // 3. 检查目标（target）是否能被感染，以及是否尚未被感染
+                //    这是最关键的逻辑修正：!InfectionUtility.IsInfectedWithVirus
+                if (!InfectionUtility.IsInfectedWithVirus(target, vs.virus) && InfectionUtility.CheckRaceInfectability(target, vs.virus))
+                {
+                    // 4. 计算感染概率
+                    if (Rand.Value < (vs.virus.Infectivity / 100f) * contagionFactor)
+                    {
+                        // 5. 执行感染
+                        InfectionUtility.ExecuteVirusTransmission(target, vs.virus);
+                        hasBeenInfected = true; // 标记发生了传染
+                    }
+                }
+            }
+
+            return hasBeenInfected;
+        }
+        /// <summary>
+        /// 检测指定生物体是否已感染特定病毒
+        /// </summary>
+        /// <param name="pawn">要检测的生物体</param>
+        /// <param name="virus">要检测的病毒株</param>
+        /// <returns>如果生物体未感染该病毒则返回true，否则返回false</returns>
+        /// <remarks>
+        /// 该方法会遍历生物体的所有健康状态差异，检查是否存在相同类型的病毒
+        /// 如果找到相同病毒株，则认为已感染，返回false
+        /// 如果数据异常（如生物体为空或病毒为空），默认返回true允许感染
+        /// </remarks>
+        public static bool IsInfectedWithVirus(Pawn pawn, VirusStrain virus)
+        {
+            // 添加调试输出：开始检查病毒感染状态
+            RBDugInfo($"开始检查病毒感染状态 - 生物: {pawn.Name?.ToStringFull ?? pawn.def.defName}, 病毒: {virus.StrainName}");
+
+            // 外部参数检查
+            if (pawn?.health?.hediffSet?.hediffs == null || virus == null)
+            {
+                RBDugInfo($"参数检查失败 - 生物或病毒为空，默认允许感染");
+                return true; // 数据异常时，默认允许感染（可根据需求改成 false）
+            }
+
+            List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+            RBDugInfo($"检查生物的健康状态差异数量: {hediffs.Count}");
+
+            foreach (Hediff hediff in hediffs)
+            {
+                if (hediff == null) continue;
+
+                HediffComp_VirusStrainContainer comp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (comp?.virus != null)
+                {
+                    if (comp.virus.UniqueID == virus.UniqueID)
+                    {
+                        RBDugInfo($"感染检查失败 - {pawn.Name?.ToStringFull ?? pawn.def.defName} 已感染相同病毒 {virus.StrainName}");
+                        return false; // 找到同类型病毒，不能再次感染
+                    }
+                }
+            }
+
+            RBDugInfo($"感染检查通过 - {pawn.Name?.ToStringFull ?? pawn.def.defName} 未感染病毒 {virus.StrainName}，可以感染");
+            return true; // 没找到同类型病毒，可以感染
+        }
+
+
+        /// <summary>
+        /// 检测指定种族的病毒感染性
+        /// </summary>
+        /// <param name="pawn">要检测的生物体</param>
+        /// <param name="virus">要检测的病毒株</param>
+        /// <returns>该种族对病毒的感染性评估结果</returns>
+        /// <remarks>
+        /// 该方法用于评估不同种族对病毒的易感性
+        /// 检查异种基因名称或种族名称是否在目标种族列表中
+        /// 如果在列表中则返回true表示可以感染，否则返回false
+        /// </remarks>
+        public static bool CheckRaceInfectability(Pawn pawn, VirusStrain virus)
+        {
+            // 添加调试输出：开始检查种族感染性
+            RBDugInfo($"开始检查种族感染性 - 生物: {pawn.Name?.ToStringFull ?? pawn.def.defName}, 病毒: {virus.StrainName}");
+
+            // 检查是否为动物且病毒不能感染动物
+            if (pawn.IsAnimal && !virus.CanInfectAnimals)
+            {
+                RBDugInfo($"感染检查失败 - {pawn.Name?.ToStringFull ?? pawn.def.defName} 是动物，但病毒 {virus.StrainName} 不能感染动物");
+                return false;
+            }
+            // 检查是否为机械体且病毒不是机械病毒
+            if (pawn.RaceProps.IsMechanoid && !virus.IsMechVirus)
+            {
+                RBDugInfo($"感染检查失败 - {pawn.Name?.ToStringFull ?? pawn.def.defName} 是机械体，但病毒 {virus.StrainName} 不是机械病毒");
+                return false;
+            }
+
+            TargetRace = virus.TargetRace;
+            RBDugInfo($"病毒 {virus.StrainName} 的目标种族列表: {(TargetRace != null ? string.Join(", ", TargetRace) : "无")}");
+
+            // 如果目标种族列表为空，则所有种族都可以感染
+            if (TargetRace == null || TargetRace.Count == 0)
+            {
+                RBDugInfo($"感染检查通过 - 病毒 {virus.StrainName} 没有特定目标种族限制");
+                return true;
+            }
+
+            // 检查种族名称
+            string raceName = pawn.def.defName;
+            bool raceMatch = TargetRace.Contains(raceName);
+            RBDugInfo($"种族匹配检查 - 生物种族: {raceName}, 匹配结果: {raceMatch}");
+
+            // 检查异种基因名称
+            bool xenotypeMatch = false;
+            if (pawn.genes?.Xenotype != null)
+            {
+                string xenotypeName = pawn.genes.Xenotype.defName;
+                xenotypeMatch = TargetRace.Contains(xenotypeName);
+                RBDugInfo($"异种基因匹配检查 - 异种基因: {xenotypeName}, 匹配结果: {xenotypeMatch}");
+            }
+            else
+            {
+                RBDugInfo("异种基因检查跳过 - 生物没有异种基因");
+            }
+
+            // 如果种族或异种基因都不匹配，直接返回false
+            if (!raceMatch && !xenotypeMatch)
+            {
+                RBDugInfo($"感染检查失败 - {pawn.Name?.ToStringFull ?? pawn.def.defName} 的种族和异种基因都不匹配病毒 {virus.StrainName} 的目标");
+                return false;
+            }
+
+            RBDugInfo($"感染检查通过 - {pawn.Name?.ToStringFull ?? pawn.def.defName} 符合病毒 {virus.StrainName} 的感染条件");
+            return true; // 修正：如果匹配成功应该返回true而不是false
+        }
+
+        /// <summary>
+        /// 执行病毒传播 - 处理病毒从一个生物体传播到另一个生物体的逻辑
+        /// </summary>
+        /// <param name="sourcePawn">病毒源生物体（携带病毒的生物）</param>
+        /// <param name="targetPawn">目标生物体（可能被感染的生物）</param>
+        /// <param name="virus">要传播的病毒株</param>
+        /// <returns>传播是否成功</returns>
+        public static bool ExecuteVirusTransmission(Pawn targetPawn, VirusStrain virus)
+        {
+            if (targetPawn == null || virus == null)
+                return false;
+
+            string hediffDefName = "RimBio_GenericVirusContainer";
+            HediffDef hediffDef = DefDatabase<HediffDef>.GetNamedSilentFail(hediffDefName);
+            if (hediffDef == null)
+            {
+                Log.Error("[InfectionUtility] 未找到 HediffDef RimBio_GenericVirusContainer，无法施加病毒。");
+                return false;
+            }
+
+            // 深拷贝病毒，避免共享引用串状态
+            VirusStrain cloned = virus.Clone();
+
+            Hediff newHediff = HediffMaker.MakeHediff(hediffDef, targetPawn);
+            HediffComp_VirusStrainContainer newHediffComp = newHediff.TryGetComp<HediffComp_VirusStrainContainer>();
+            if (newHediffComp == null)
+            {
+                Log.Error("[InfectionUtility] 新 Hediff 缺少 HediffComp_VirusStrainContainer 组件。");
+                return false;
+            }
+
+            newHediffComp.SetVirusDirectly(cloned);
+            newHediff.Severity = cloned.InfectionSeverity; // 可选：与病毒初始严重度对齐
+            targetPawn.health.AddHediff(newHediff);
+            return true;
+        }
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Utils\MathUtil.cs
+=
+.
+﻿public static class MathUtil
+{
+    /// <summary>
+    /// 限制整数值在 min 和 max 之间
+    /// </summary>
+    public static int Clamp(int value, int min, int max)
+    {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+
+    /// <summary>
+    /// 限制浮点值在 min 和 max 之间
+    /// </summary>
+    public static float Clamp(float value, float min, float max)
+    {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Utils\VirusConstraints.cs
+=
+.
+﻿using PromotionLib;
+using System;
+using System.Collections.Generic;
+using static PromotionLib.VirusStrain;
+
+/// <summary>
+/// 每个病毒类型的统一数值约束逻辑
+/// 修改病毒属性或变异后，调用 Apply() 自动校正
+/// </summary>
+public static class VirusConstraints
+{
+    public static void VirusStrainApply(ref VirusStrain v)
+    {
+        switch (v.Type)
+        {
+            case VirusCategory.PandemicVirus:
+                // 流行病毒类
+                v.MaxIncubationPeriod = Math.Min(v.MaxIncubationPeriod, 300000);
+                //限制潜伏期不超过 300000 tick
+                v.Infectivity = Math.Max(v.Infectivity, 50);
+                // 最小传播力为 50
+                v.Symptoms = CleanAndTrim(v.Symptoms, 3);
+                // 症状列表最多保留 3 个
+                v.StrainGene = CleanAndTrim(v.StrainGene, 3);
+                // 病毒基因列表最多保留 3 个
+                break;
+
+        }
+        // 保证最小潜伏期 ≤ 最大潜伏期
+        if (v.MinIncubationPeriod > v.MaxIncubationPeriod)
+            v.MaxIncubationPeriod = v.MinIncubationPeriod;
+    }
+
+    /// <summary>
+    /// 清理集合中 null 对象，去重并优化容量，最后截断到指定长度。
+    /// </summary>
+    /// <typeparam name="T">集合元素类型</typeparam>
+    /// <param name="list">要处理的集合（会在原地修改）</param>
+    /// <param name="maxCount">保留的最大数量</param>
+    public static List<T> CleanAndTrim<T>(List<T> list, int maxCount)
+    {
+        if (list == null)
+            throw new ArgumentNullException(nameof(list));
+
+        // 1. 排除 null 对象（仅对引用类型有效）
+        list.RemoveAll(item => item == null);
+
+        // 2. 去重（保持原顺序）
+        var seen = new HashSet<T>();
+        list.RemoveAll(item => !seen.Add(item));
+
+        // 3. 优化容量（减少内存占用）
+        list.TrimExcess();
+
+        // 4. 截断到指定长度
+        if (maxCount >= 0 && list.Count > maxCount)
+        {
+            list.RemoveRange(maxCount, list.Count - maxCount);
+        }
+
+        return list;
+    }
+}
+.
+.
+=
+File: C:\Users\30978\Desktop\Promotion\Promotion\1.6\Source\PromotionLib\Utils\VirusStrainUtils.cs
+=
+.
+﻿using PromotionLib.PrLibHediffComp;
+using System.Collections.Generic;
+using System.Linq;
+using Verse;
+
+namespace PromotionLib.Utils
+{
+    public static class VirusStrainUtils
+    {
+        public static List<HediffComp_VirusStrainContainer> GetAllHediffComp_VirusStrainContainerForPawn(Pawn pawn)
+        {
+            List<HediffComp_VirusStrainContainer> virusStrains = new List<HediffComp_VirusStrainContainer>();
+            if (pawn?.health?.hediffSet?.hediffs == null)
+            {
+                return virusStrains; // 返回空列表
+            }
+            foreach (Hediff hediff in pawn.health.hediffSet.hediffs)
+            {
+                if (hediff == null) continue;
+                HediffComp_VirusStrainContainer comp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (comp?.virus != null)
+                {
+                    virusStrains.Add(comp);
+                }
+            }
+            return virusStrains.Distinct().ToList(); // 返回不重复的病毒株列表
+        }
+        public static List<VirusStrain> GetAllHediffComp_VirusStrainContainerListConverVirusStrain(List<HediffComp_VirusStrainContainer> hediffComp_VirusStrainContainers)
+        {
+            List<VirusStrain> virusStrains = new List<VirusStrain>();
+            foreach (HediffComp_VirusStrainContainer hediffComp in hediffComp_VirusStrainContainers)
+            {
+                if (hediffComp?.virus != null)
+                {
+                    virusStrains.Add(hediffComp.virus);
+                }
+            }
+            return virusStrains; // 返回不重复的病毒株列表
+        }
+        public static List<VirusStrain> GetAllVirusStrainsForPawn(Pawn pawn)
+        {
+            List<VirusStrain> virusStrains = new List<VirusStrain>();
+            if (pawn?.health?.hediffSet?.hediffs == null)
+            {
+                return virusStrains; // 返回空列表
+            }
+            foreach (Hediff hediff in pawn.health.hediffSet.hediffs)
+            {
+                if (hediff == null) continue;
+                HediffComp_VirusStrainContainer comp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
+                if (comp?.virus != null)
+                {
+                    virusStrains.Add(comp.virus);
+                }
+            }
+            return virusStrains.Distinct().ToList(); // 返回不重复的病毒株列表
+        }
+
+        public static List<VirusStrain> DeduplicateStrains(List<VirusStrain> viruses)
+        {
+            List<VirusStrain> uniqueStrains = viruses.GroupBy(p => p.UniqueID).Select(group => group.First()).ToList();
+            return uniqueStrains;
+        }
+    }
+}
+.
+.
