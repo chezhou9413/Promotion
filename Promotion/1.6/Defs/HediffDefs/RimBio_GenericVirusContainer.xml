@@ -83,6 +83,8 @@
 
         <!-- 毒株附带的症状（字符串 ID） -->
         <symptoms>
+          <li>MuscleParasites</li>
+          <li>Flu</li>
         </symptoms>
 
         <!-- 影响的目标种族（DefName） -->
@@ -105,6 +107,9 @@
           <li>AdaptableTag</li>
         </specialStrainGene>
         <CanInfectAnimals>true</CanInfectAnimals>
+      </li>
+      <li Class="PromotionLib.PrLibHediffComp.HediffCompProperties_ExtractVirus">
+        <extractVirusPool>PrLib_SubPool_1</extractVirusPool>
       </li>
     </comps>
     <stages>

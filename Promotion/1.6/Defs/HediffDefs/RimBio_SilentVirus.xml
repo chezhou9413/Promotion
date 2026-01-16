@@ -84,6 +84,8 @@
           <li>RimBio_Complication_Fatigue</li>          <!-- 疲劳症状 -->
           <li>RimBio_Complication_SkinRash</li>
           <li>RimBio_Complication_CognitiveDecline</li>
+          <li>MuscleParasites</li>
+          <li>Flu</li>
         </symptoms>
 
         <!-- 影响的目标种族（DefName） -->
@@ -103,6 +105,10 @@
           <li>ObservationTag</li>
         </specialStrainGene>
         <CanInfectAnimals>false</CanInfectAnimals>
+      </li>
+
+       <li Class="PromotionLib.PrLibHediffComp.HediffCompProperties_ExtractVirus">
+        <extractVirusPool>PrLib_SubPool_1</extractVirusPool>
       </li>
     </comps>
     <stages>

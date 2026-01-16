@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <PromotionLib.PrLibDef.ExtractVirusPool>   
+    <defName>PrLib_SubPool_1</defName> 
+    <ExtractViruslist>
+      <li>
+        <key>Promotion_Medicine_Antibiotic</key>
+        <value>25</value>
+      </li>
+      <li>
+        <key>MealLavish_Meat</key>
+        <value>50</value>
+      </li>
+      <li>
+        <key>Gun_Type5EM_CQC</key>
+        <value>25</value>
+      </li>
+
+    </ExtractViruslist>
+
+  </PromotionLib.PrLibDef.ExtractVirusPool>
+
+
+</Defs>
