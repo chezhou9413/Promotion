@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using PromotionLib.PrLibDefOf;
 using RimWorld;
 using System;
 using System.Reflection;

@@ -1,6 +1,8 @@
-﻿using RimWorld;
+﻿using PromotionLib.PrLibHediffComp;
+using RimWorld;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace PromotionLib
@@ -42,12 +44,11 @@ namespace PromotionLib
                     HandleComplication(pawn);
                 }
             }
-
-            // 清理已死亡或被移除的 Pawn
             pawnTickCounters.RemoveAll(pair => pair.Key == null || pair.Key.Dead || pair.Key.Discarded);
         }
 
         private void HandleComplication(Pawn pawn)
+
         {
             toAdd.Clear();
             List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
@@ -60,7 +61,6 @@ namespace PromotionLib
                     SignatureComplication.Clear();
                     symptoms = hediffComp.virus.Symptoms;
                     classifyComplications(symptoms, pawn);
-
                     float baseProbability = GetBaseProbability(hediffComp.virus.Pathogenicity);
                     float ageFactor = GetAgeFactor(pawn);
                     float temperatureFactor = CalculateTemperatureImpact(
@@ -68,24 +68,32 @@ namespace PromotionLib
                         hediffComp.virus.MinAdaptedTemperature,
                         hediffComp.virus.MaxAdaptedTemperature);
                     float infectionFactor = GetInfectionImpact(hediffComp.strainProgress);
-
                     bool isInfected = ShouldInfect(baseProbability, ageFactor, temperatureFactor, infectionFactor, pawn.LabelShort);
 
                     if (isInfected)
                     {
-                        Hediff hediff = null;
+                        Hediff chosenHediff = null;
                         if (!hediffComp.IncubationPeriod)
                         {
-                            hediff = GenericComplicationList.RandomElementWithFallback(null);
+                            chosenHediff = GenericComplicationList.RandomElementWithFallback(null);
                         }
                         else
                         {
-                            hediff = SignatureComplication.RandomElementWithFallback(null);
+                            chosenHediff = SignatureComplication.RandomElementWithFallback(null);
                         }
-
-                        if (hediff != null)
+                        if (chosenHediff != null)
                         {
-                            toAdd.Add(hediff); // ✅ 不在循环中添加，先存到临时表
+                            var comp = chosenHediff.TryGetComp<ComplicationComp>();
+                            if (comp == null || (comp.Props.scope != null && comp.Props.scope.ToLowerInvariant() == "bodypart"))
+                            {
+                                chosenHediff.Part = GetRandomAvailablePart(pawn, chosenHediff.def);
+                            }
+                            else if (comp.Props.scope != null && comp.Props.scope.ToLowerInvariant() == "wholebody")
+                            {
+                                chosenHediff.Part = null; // 全身状态 [cite: 155]
+                            }
+
+                            toAdd.Add(chosenHediff); // 暂存到待添加列表 
                         }
                     }
                 }
@@ -94,7 +102,6 @@ namespace PromotionLib
             {
                 pawn.health.AddHediff(h);
             }
-
         }
 
 
@@ -106,21 +113,36 @@ namespace PromotionLib
         {
             foreach (string s in strings)
             {
-                hediffDef = DefDatabase<HediffDef>.GetNamed(s);
-                Hediff hediff = HediffMaker.MakeHediff(hediffDef, pawn);
-                complicationComp = hediff.TryGetComp<ComplicationComp>();
-                if (complicationComp != null)
+                // 安全获取 Def
+                HediffDef def = DefDatabase<HediffDef>.GetNamed(s, errorOnFail: false);
+                if (def == null) continue;
+
+                // 实例化 Hediff
+                Hediff hediff = HediffMaker.MakeHediff(def, pawn);
+                var comp = hediff.TryGetComp<ComplicationComp>();
+                if (comp != null)
                 {
-                    if (complicationComp.Complication.ComplicationType == "GenericComplication")
-                    {
+                    if (comp.Complication.ComplicationType == "GenericComplication")
                         GenericComplicationList.Add(hediff);
-                    }
-                    else if (complicationComp.Complication.ComplicationType == "SignatureComplication" || complicationComp.Complication.ComplicationType == "NeuroSignatureComplication" || complicationComp.Complication.ComplicationType == "AbilityComplication" || complicationComp.Complication.ComplicationType == "EvolutionComplication")
-                    {
+                    else
                         SignatureComplication.Add(hediff);
-                    }
+                }
+                else
+                {
+                    GenericComplicationList.Add(hediff);
                 }
             }
+        }
+
+        private BodyPartRecord GetRandomAvailablePart(Pawn pawn, HediffDef def)
+        {
+            var notMissingParts = pawn.health.hediffSet.GetNotMissingParts().ToList();
+            var occupiedParts = pawn.health.hediffSet.hediffs
+                .Where(h => h.def == def && h.Part != null)
+                .Select(h => h.Part)
+                .ToHashSet();
+            var availableParts = notMissingParts.Where(p => !occupiedParts.Contains(p)).ToList();
+            return availableParts.Any() ? availableParts.RandomElement() : null;
         }
 
         /// <summary>
@@ -267,7 +289,7 @@ namespace PromotionLib
      string debugLabel = "未知小人")
         {
             // 计算最终概率
-            float adjustedTempFactor = (temperatureFactor+2) / 2.0f;
+            float adjustedTempFactor = (temperatureFactor + 2) / 2.0f;
             float finalChance = baseProbability * ageFactor * adjustedTempFactor * infectionFactor;
 
             // 生成 0~1 随机数

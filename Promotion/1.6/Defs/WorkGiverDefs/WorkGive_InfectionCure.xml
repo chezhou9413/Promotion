@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <WorkGiverDef>
+    <defName>WorkGive_InfectionCure</defName>
+    <label>感染治疗</label>
+    <giverClass>PromotionLib.PrLibWorkGiver.WorkGive_InfectionCure</giverClass>
+    <workType>Prlib_InfectionCure</workType>
+    <priorityInType>0</priorityInType>
+    <verb>治疗</verb>
+    <gerund>正在治疗</gerund>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+</Defs>

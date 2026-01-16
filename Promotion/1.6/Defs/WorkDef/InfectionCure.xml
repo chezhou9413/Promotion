@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+    <WorkTypeDef>
+        <defName>Prlib_InfectionCure</defName>
+        <labelShort>感染治疗</labelShort>
+        <pawnLabel>感染治疗</pawnLabel>
+        <gerundLabel>感染治疗</gerundLabel>
+        <description>为感染毒株的殖民者定期进行治疗</description>
+        <naturalPriority>0</naturalPriority>
+        <alwaysStartActive>true</alwaysStartActive>
+        <relevantSkills>
+            <li>Medicine</li>
+        </relevantSkills>
+        <workTags>
+            <li>Commoner</li>
+            <li>AllWork</li>
+        </workTags>
+    </WorkTypeDef>
+</Defs>

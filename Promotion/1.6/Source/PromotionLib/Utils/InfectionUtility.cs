@@ -1,4 +1,5 @@
-﻿using PromotionLib.Utils;
+﻿using PromotionLib.PrLibHediffComp;
+using PromotionLib.Utils;
 using System.Collections.Generic;
 using Verse;
 
@@ -109,8 +110,7 @@ namespace PromotionLib
                 HediffComp_VirusStrainContainer comp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
                 if (comp?.virus != null)
                 {
-                    RBDugInfo($"发现病毒组件 - 健康状态: {hediff.def.defName}, 病毒: {comp.virus.StrainName}");
-                    if (comp.virus.StrainName == virus.StrainName)
+                    if (comp.virus.UniqueID == virus.UniqueID)
                     {
                         RBDugInfo($"感染检查失败 - {pawn.Name?.ToStringFull ?? pawn.def.defName} 已感染相同病毒 {virus.StrainName}");
                         return false; // 找到同类型病毒，不能再次感染
@@ -200,27 +200,32 @@ namespace PromotionLib
         /// <returns>传播是否成功</returns>
         public static bool ExecuteVirusTransmission(Pawn targetPawn, VirusStrain virus)
         {
-            string hediffDefName = "RimBio_GenericVirusContainer";
-            HediffDef hediffDef = DefDatabase<HediffDef>.GetNamed(hediffDefName);
-            if (hediffDef != null)
-            {
-                Hediff newHediff = HediffMaker.MakeHediff(hediffDef, targetPawn);
+            if (targetPawn == null || virus == null)
+                return false;
 
-                // 获取新 Hediff 的病毒容器组件
-                HediffComp_VirusStrainContainer newHediffComp = newHediff.TryGetComp<HediffComp_VirusStrainContainer>();
-                if (newHediffComp != null)
-                {
-                    // 直接设置病毒实例
-                    newHediffComp.SetVirusDirectly(virus);
-                }
-                else
-                {
-                    Log.Error($"[AirborneInfectionController] 无法获取新 Hediff 的病毒容器组件。");
-                }
-                // 将新的 Hediff 添加到 pawn1 的健康状态中
-                targetPawn.health.AddHediff(newHediff);
+            string hediffDefName = "RimBio_GenericVirusContainer";
+            HediffDef hediffDef = DefDatabase<HediffDef>.GetNamedSilentFail(hediffDefName);
+            if (hediffDef == null)
+            {
+                Log.Error("[InfectionUtility] 未找到 HediffDef RimBio_GenericVirusContainer，无法施加病毒。");
+                return false;
             }
-            return false; // 临时返回false，表示传播未成功
+
+            // 深拷贝病毒，避免共享引用串状态
+            VirusStrain cloned = virus.Clone();
+
+            Hediff newHediff = HediffMaker.MakeHediff(hediffDef, targetPawn);
+            HediffComp_VirusStrainContainer newHediffComp = newHediff.TryGetComp<HediffComp_VirusStrainContainer>();
+            if (newHediffComp == null)
+            {
+                Log.Error("[InfectionUtility] 新 Hediff 缺少 HediffComp_VirusStrainContainer 组件。");
+                return false;
+            }
+
+            newHediffComp.SetVirusDirectly(cloned);
+            newHediff.Severity = cloned.InfectionSeverity; // 可选：与病毒初始严重度对齐
+            targetPawn.health.AddHediff(newHediff);
+            return true;
         }
     }
 }

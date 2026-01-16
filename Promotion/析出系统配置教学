@@ -1,0 +1,144 @@
+配置析出池的方法
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- 
+    注意：标签名必须与你的 C# 类的 [命名空间].[类名] 一致。
+    如果你的类已经通过特定方式注册了简写，可以只写 ExtractVirusPool。
+  -->
+  <PromotionLib.PrLibDef.ExtractVirusPool>
+    
+    <!-- 唯一标识符：在代码中引用此 Def 时使用 -->
+    <defName>PrLib_VirusPool_Standard</defName>
+    
+    <!-- 
+      ExtractViruslist 是一个 Dictionary<ThingDef, float>。
+      在 RimWorld 的 XML 序列化中，字典通常表现为 <li> 列表，
+      每个 <li> 包含 <key> (对应 ThingDef) 和 <value> (对应 随机 float 权重)。
+    -->
+    <ExtractViruslist>
+      
+      <!-- 示例 1：普通流感病毒，权重较高 (50) -->
+      <li>
+        <key>Apparel_ShieldBelt</key> <!-- 这里应替换为你实际的病毒 ThingDef 的 defName -->
+        <value>50</value>
+      </li>
+
+      <!-- 示例 2：致命病毒，权重较低 (10)，出现概率小 -->
+      <li>
+        <key>Gun_DoomsdayRocket</key> <!-- 仅作示例，请替换为真实的病毒物品定义 -->
+        <value>10</value>
+      </li>
+
+      <!-- 示例 3：罕见突变，权重极低 (1.5) -->
+      <li>
+        <key>MealSurvivalPack</key>
+        <value>1.5</value>
+      </li>
+      
+    </ExtractViruslist>
+
+  </PromotionLib.PrLibDef.ExtractVirusPool>
+
+  <!-- 你可以定义多个不同的抽取池，用于不同的场景（如：低级实验室 vs 高级实验室） -->
+  <PromotionLib.PrLibDef.ExtractVirusPool>
+    <defName>PrLib_VirusPool_Advanced</defName>
+    <ExtractViruslist>
+      <li>
+        <key>Apparel_ShieldBelt</key>
+        <value>20</value>
+      </li>
+      <li>
+        <key>Gun_DoomsdayRocket</key>
+        <value>80</value>
+      </li>
+    </ExtractViruslist>
+  </PromotionLib.PrLibDef.ExtractVirusPool>
+
+</Defs>
+配置析出物品的方法
+<!-- 
+    流感病毒样本：使用了自定义的物品组件 (ThingComp)
+  -->
+  <ThingDef ParentName="ResourceBase">
+    <defName>PrLib_VirusSample_Flu</defName>
+    <label>实验性病毒样本 (流感)</label>
+    <description>一份保存在试管中的流感病毒样本。可以通过特定的医疗设备进行分析或提取。</description>
+    
+    <graphicData>
+      <!-- 使用原版工业药剂的贴图作为示例 -->
+      <texPath>Things/Item/Resource/Medicine/MedicineIndustrial</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+    
+    <stackLimit>10</stackLimit>
+    
+    <statBases>
+      <MaxHitPoints>50</MaxHitPoints>
+      <MarketValue>150</MarketValue>
+      <Mass>0.1</Mass>
+      <Flammability>0.5</Flammability>
+    </statBases>
+
+    <thingCategories>
+      <li>Items</li>
+    </thingCategories>
+
+    <!-- 
+      comps 列表：这是关联 C# 逻辑的核心部分。
+    -->
+    <comps>
+      <!-- 
+        li Class="...": 这里必须指向你的 CompProperties 类。
+        这会告诉游戏：这个物品拥有 ThingComp_ExtractVirus 组件。
+      -->
+      <li Class="PromotionLib.PrLibDef.ThingCompPorcupine_ExtractVirus">
+        <!-- 
+          virusHediffdef: 对应 C# 中的 List<HediffDef>。
+          这里填入想要关联的疾病/状态的 defName。
+        -->
+        <virusHediffdef>
+          <li>Flu</li> <!-- 关联原版流感 Hediff -->
+        </virusHediffdef>
+        
+        <!-- 
+          complicationCompHediffdef: 对应并发症列表。
+        -->
+        <complicationCompHediffdef>
+          <li>Pneumonia</li> <!-- 关联原版肺炎 Hediff -->
+        </complicationCompHediffdef>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <!-- 
+    ============================================================================
+    第三部分：健康状态/疾病定义 (HediffDef)
+    ============================================================================
+    这里展示了如何将 HediffCompProperties_ExtractVirus 挂载到疾病上。
+  -->
+
+  <HediffDef>
+    <defName>PrLib_ExperimentalInfection</defName>
+    <label>实验性感染</label>
+    <description>一种被记录在案的感染状态，当被抗生素清除时，会析出病毒样本。</description>
+    <hediffClass>HediffWithComps</hediffClass>
+    <initialSeverity>0.1</initialSeverity>
+    <comps>
+      <!-- 
+        1. 提取组件：HediffCompProperties_ExtractVirus
+        决定了此疾病被清除时生成什么。
+      -->
+      <li Class="PromotionLib.PrLibHediffComp.HediffCompProperties_ExtractVirus">
+        <!-- 方式 A: 指定固定生成的 ThingDef -->
+        <ExtractVirusThingDef>PrLib_VirusSample_Flu</ExtractVirusThingDef>
+        
+        <!-- 方式 B: 指定一个抽取池 (与方式 A 二选一，代码中 A 优先) -->
+        <extractVirusPool>PrLib_VirusPool_Standard</extractVirusPool>
+      </li>
+
+      <!-- 
+       上面两个配置只能选择一个，如果同时配置，则优先使用 ExtractVirusThingDef。
+      -->
+    </comps>
+  </HediffDef>

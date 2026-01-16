@@ -1,0 +1,8 @@
+<Defs>
+  <JobDef>
+    <defName>Job_InfectionCure</defName>
+    <driverClass>PromotionLib.PrLibJob.JobDiver_InfectionCure</driverClass>
+    <reportString>正在治疗</reportString>
+    <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+  </JobDef>
+</Defs>

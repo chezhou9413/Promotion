@@ -1,7 +1,7 @@
-﻿using RimWorld;
-using Verse;
+﻿
+using RimWorld;
 
-namespace PromotionLib
+namespace PromotionLib.PrLibDefOf
 {
     
     [DefOf]

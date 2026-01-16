@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using PromotionLib.PrLibHediffComp;
+using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
@@ -6,34 +7,22 @@ namespace PromotionLib
 {
     public class VirusInfectivityController : MapComponent
     {
-        private Dictionary<Pawn, int> pawnTickCounters = new Dictionary<Pawn, int>();
-
         public VirusInfectivityController(Map map) : base(map)
         {
         }
 
         public override void MapComponentTick()
         {
-            foreach (Pawn pawn in map.mapPawns.AllPawns)
+            List<Pawn> pawns = map.mapPawns.AllPawns;
+            for (int i = 0; i < pawns.Count; i++)
             {
-                if (!pawn.Spawned || pawn.Dead) continue;
-
-                if (!pawnTickCounters.ContainsKey(pawn))
+                Pawn pawn = pawns[i];
+                if (pawn.DestroyedOrNull() || pawn.Dead) continue;
+                if (pawn.IsHashIntervalTick(250))
                 {
-                    pawnTickCounters[pawn] = 0;
-                }
-
-                pawnTickCounters[pawn]++;
-
-                if (pawnTickCounters[pawn] >= 2500)
-                {
-                    pawnTickCounters[pawn] = 0;
                     HandlePawnInfectivity(pawn);
                 }
             }
-
-            // 使用新的扩展方法
-            pawnTickCounters.RemoveAll(pair => pair.Key == null || pair.Key.Discarded || pair.Key.Dead);
         }
 
         private void HandlePawnInfectivity(Pawn pawn)
@@ -44,16 +33,14 @@ namespace PromotionLib
                 HediffComp_VirusStrainContainer comp = hediff.TryGetComp<HediffComp_VirusStrainContainer>();
                 if (comp != null && comp.virus != null)
                 {
-                    float increment = (comp.virus.AntigenStrength / 2f) / 10f;
+                    float increment = (comp.virus.AntigenStrength / 2f) / 100f;
                     comp.strainProgress = Mathf.Min(comp.strainProgress + increment, 1f);
                 }
             }
         }
-
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref pawnTickCounters, "pawnTickCounters", LookMode.Reference, LookMode.Value);
         }
     }
 }

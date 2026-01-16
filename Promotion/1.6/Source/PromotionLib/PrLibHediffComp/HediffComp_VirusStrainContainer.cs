@@ -2,29 +2,26 @@
 using System.Collections.Generic;
 using Verse;
 
-namespace PromotionLib
+namespace PromotionLib.PrLibHediffComp
 {
     public class HediffCompProperties_VirusStrainContainer : HediffCompProperties
     {
         public string type = "PromotionLib.VirusStrain";
-
         public string uniqueID = "unknown";
         public string strainName = "未命名毒株";
-
         public int infectivity = 50;
         public int pathogenicity = 50;
         public float antigenStrength = 50;
         public int airSurvivability = 50;
         public int surfacePersistence = 50;
         public int mutationRate = 10;
-
         public int minIncubationPeriod = 0;
         public int maxIncubationPeriod = 0;
         public int strainVersion = 1;
         public bool isCultivated = false;
         public float minAdaptedTemperature = -10f;
         public float maxAdaptedTemperature = 40f;
-
+        public int needHealLeve = 0;
         public bool fluidTransmission = false;
         public bool isMechVirus = false;
         public bool isZombieVirus = false;
@@ -126,6 +123,7 @@ namespace PromotionLib
                     // 解析失败时的处理
                     virus.Type = VirusCategory.PandemicVirus; // 默认值
                 }
+                virus.NeedHealLeve = Props.needHealLeve;
                 virus.UniqueID = Props.uniqueID;
                 virus.StrainName = Props.strainName;
                 virus.Infectivity = Props.infectivity;

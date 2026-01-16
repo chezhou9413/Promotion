@@ -1,4 +1,5 @@
-﻿using PromotionLib.Utils;
+﻿using PromotionLib.PrLibHediffComp;
+using PromotionLib.Utils;
 using RimWorld;
 using System.Collections.Generic;
 using System.Linq;

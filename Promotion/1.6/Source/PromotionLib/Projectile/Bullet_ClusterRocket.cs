@@ -1,5 +1,3 @@
-// 文件：Projectile_ClusterRocket.cs
-using PromotionLib.RwBioUI.UIMap;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -65,7 +63,6 @@ namespace PromotionLib.Projectile
             }
             Map map = this.Map;
             IntVec3 center = this.Position;
-            effMapData.spwneff("boom", 1f, center.ToVector3Shifted(), 3f);
             if (map == null || !center.InBounds(map))
             {
                 base.Impact(hitThing, blockedByShield);

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Verse;
 
 namespace PromotionLib
 {
-    public class Complication
+    public class Complication : IExposable
     {
         public string ComplicationType;
         //{
@@ -47,6 +43,12 @@ namespace PromotionLib
         //    BodyPart
         //}
         public int severityLevel;
-     
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref ComplicationType, "ComplicationType", "");
+            Scribe_Values.Look(ref TargetScope, "TargetScope", "");
+            Scribe_Values.Look(ref severityLevel, "severityLevel", 0);
+        }
     }
 }
