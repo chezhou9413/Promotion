@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <HediffDef>
+    <defName>RimBio_A11</defName>
+    <label>通用病毒感染</label>
+    <description>一种通用的病毒感染容器，可以承载各种不同类型的病毒毒株。具体效果取决于所携带的病毒类型。</description>
+    <hediffClass>PromotionLib.riwbioHediff</hediffClass>
+    <initialSeverity>0.01</initialSeverity>
+    <tendable>true</tendable>
+    <isBad>true</isBad>
+    <comps>
+      <li Class="HediffCompProperties_SeverityPerDay">
+        <severityPerDay>0.03</severityPerDay>        <!-- 每天严重程度+0.03 -->
+      </li>
+      <li Class="PromotionLib.HediffCompProperties_VirusStrainContainer">
+        <type>PandemicVirus</type>
+
+        <!-- 毒株唯一标识符 -->
+        <uniqueID>generic-virus-container</uniqueID>
+
+        <!-- 毒株名称 -->
+        <strainName>通用病毒毒株</strainName>
+
+        <!-- 传染性（影响感染传播概率） -->
+        <infectivity>40</infectivity>
+
+        <!-- 致病性（越高越容易导致症状） -->
+        <pathogenicity>40</pathogenicity>
+
+        <!-- 抗原强度（影响免疫反应强度） -->
+        <antigenStrength>0.6</antigenStrength>
+
+        <!-- 空气传播能力（影响空气中存活时间） -->
+        <airSurvivability>60</airSurvivability>
+
+        <!-- 表面残留能力（影响病毒在物品表面的携带概率） -->
+        <surfacePersistence>45</surfacePersistence>
+
+        <!-- 突变率（影响毒株变异或进化） -->
+        <mutationRate>8</mutationRate>
+
+        <!-- 潜伏期下限（单位：tick） -->
+        <minIncubationPeriod>150</minIncubationPeriod>
+
+        <!-- 潜伏期上限（单位：tick） -->
+        <maxIncubationPeriod>800</maxIncubationPeriod>
+
+        <!-- 毒株版本号（可用于升级或识别） -->
+        <strainVersion>1</strainVersion>
+
+        <!-- 是否为人工培养毒株 -->
+        <isCultivated>true</isCultivated>
+
+        <!-- 最低适应温度（℃） -->
+        <minAdaptedTemperature>-15</minAdaptedTemperature>
+
+        <!-- 最高适应温度（℃） -->
+        <maxAdaptedTemperature>55</maxAdaptedTemperature>
+
+        <!-- 是否支持体液传播（例如：血液、唾液） -->
+        <fluidTransmission>true</fluidTransmission>
+
+        <!-- 是否为机械病毒（可用于区分机械体专属病毒） -->
+        <isMechVirus>false</isMechVirus>
+
+        <!-- 是否为丧尸病毒（影响相关逻辑） -->
+        <isZombieVirus>false</isZombieVirus>
+
+        <!-- 是否具有正面效果（如增强体能等） -->
+        <isPositiveEffect>false</isPositiveEffect>
+
+        <!-- 是否为永久效果（如永久加成） -->
+        <isPermanentEffect>false</isPermanentEffect>
+
+        <!-- 是否已中和（用于调试或事件控制） -->
+        <isNeutralized>false</isNeutralized>
+
+        <!-- 感染时的默认严重程度 -->
+        <infectionSeverity>0.25</infectionSeverity>
+
+        <!-- 毒株附带的症状（字符串 ID） -->
+        <symptoms>
+          <li>RimBio_Complication_Fever</li>            <!-- 发热症状 -->
+          <li>RimBio_Complication_Weakness</li>         <!-- 虚弱症状 -->
+          <li>RimBio_Complication_Nausea</li>           <!-- 恶心症状 -->
+          <!-- 可根据需要添加更多症状 -->
+        </symptoms>
+
+        <!-- 影响的目标种族（DefName） -->
+        <targetRace>
+          <li>Human</li>          <!-- 主要影响人类 -->
+        </targetRace>
+
+        <!-- 毒株基因标签（可用于识别或合成） -->
+        <strainGene>
+          <li>GeneAlpha</li>
+          <li>GeneBeta</li>
+          <li>GeneGamma</li>
+          <li>GeneDelta</li>
+        </strainGene>
+
+        <!-- 特殊毒株基因标签 -->
+        <specialStrainGene>
+          <li>GenericTag</li>
+          <li>ContainerTag</li>
+          <li>AdaptableTag</li>
+        </specialStrainGene>
+        <CanInfectAnimals>true</CanInfectAnimals>
+      </li>
+    </comps>
+    <stages>
+      <li>
+        <label>潜伏期</label>
+        <minSeverity>0.01</minSeverity>
+        <becomeVisible>false</becomeVisible>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>0</offset>            <!-- 潜伏期无症状 -->
+          </li>
+        </capMods>
+      </li>
+      <li>
+        <label>轻度感染</label>
+        <minSeverity>0.2</minSeverity>
+        <becomeVisible>true</becomeVisible>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>-0.05</offset>        <!-- 轻微意识影响 -->
+          </li>
+          <li>
+            <capacity>Moving</capacity>
+            <offset>-0.05</offset>        <!-- 轻微移动影响 -->
+          </li>
+        </capMods>
+      </li>
+      <li>
+        <label>中度感染</label>
+        <minSeverity>0.5</minSeverity>
+        <becomeVisible>true</becomeVisible>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>-0.10</offset>        <!-- 中等意识影响 -->
+          </li>
+          <li>
+            <capacity>Moving</capacity>
+            <offset>-0.10</offset>        <!-- 中等移动影响 -->
+          </li>
+          <li>
+            <capacity>Manipulation</capacity>
+            <offset>-0.05</offset>        <!-- 轻微操作影响 -->
+          </li>
+        </capMods>
+      </li>
+      <li>
+        <label>重度感染</label>
+        <minSeverity>0.8</minSeverity>
+        <becomeVisible>true</becomeVisible>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <offset>-0.20</offset>        <!-- 严重意识影响 -->
+          </li>
+          <li>
+            <capacity>Moving</capacity>
+            <offset>-0.20</offset>        <!-- 严重移动影响 -->
+          </li>
+          <li>
+            <capacity>Manipulation</capacity>
+            <offset>-0.15</offset>        <!-- 中等操作影响 -->
+          </li>
+          <li>
+            <capacity>Sight</capacity>
+            <offset>-0.10</offset>        <!-- 视力影响 -->
+          </li>
+        </capMods>
+      </li>
+    </stages>
+  </HediffDef>
+
+</Defs> 
