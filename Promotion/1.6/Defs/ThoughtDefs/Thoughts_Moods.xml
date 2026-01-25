@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Defs>
+
+  <ThoughtDef>
+    <defName>RimBio_Thought_MentalLoss</defName>
+    <label>心智缺失？</label>
+    <description>每天都有一群看不起的东西围在我身边说一些我完全听不懂的话 ......我应该认识它们吗？为什么我会被它们围着？</description>
+    <durationDays>1.0</durationDays> <!-- 心情持续的天数（浮点数，例如1.0表示1天）。 --> 
+    <stackLimit>1</stackLimit> <!-- 心情可堆叠的次数（1表示不可堆叠） -->
+    <stackedEffectMultiplier>1.0</stackedEffectMultiplier> <!-- 堆叠时效果的倍率（1.0表示无变化） -->
+    <effectMultiplyingStat>Consciousness</effectMultiplyingStat> <!-- 影响心情效果的属性（例如Consciousness意识会按比例缩放心情效果）。 -->
+    <stages>
+      <li>
+        <label>心智缺失</label> <!-- 阶段的显示名称 -->
+        <description>这个人正在被混乱与异化所淹没。</description> <!-- 阶段的描述 -->
+        <baseMoodEffect>-6</baseMoodEffect> <!-- 心情对角色心情值的影响（正数为正面心情，负数为负面心情，例如10表示+10心情） -->
+      </li>
+    </stages>
+  </ThoughtDef>
+
+</Defs>

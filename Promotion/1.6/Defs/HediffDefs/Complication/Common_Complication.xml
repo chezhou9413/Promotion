@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+       
+    <!-- 通用并发症 -->
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_Fatigue</defName>
+        <label>持续疲劳</label>
+        <description>患者持续感到虚弱和疲乏，体力恢复缓慢。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+        <stages>
+            <li>
+                <statFactors>
+                    <MoveSpeed>0.9</MoveSpeed>
+                    <RestRateMultiplier>0.8</RestRateMultiplier>
+                </statFactors>
+            </li>
+        </stages>
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>GenericComplication</type>
+                <scope>WholeBody</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>                <!-- 每次治疗有效12小时 -->
+                <severityPerDayTended>-0.5</severityPerDayTended>                <!-- 降低速度加快：2天痊愈 -->
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>                <!-- 治一次就差不多痊愈 -->
+                <showTendQuality>true</showTendQuality>               <!-- 隐藏治疗质量（可选） -->
+            </li>
+        </comps>
+    </HediffDef>
+
+
+    <HediffDef>
+        <minSeverity>0</minSeverity>
+        <maxSeverity>1</maxSeverity>
+        <isBad>true</isBad>
+        <defName>RimBio_Complication_MentalDisorderLoss</defName>
+        <label>心智障碍性缺失</label>
+        <description> 此人的心智因毒株影响产生了认知障碍，社交能力受到了极大的影响。</description>
+        <hediffClass>PromotionLib.ComplicationHediff</hediffClass>
+        <tendable>true</tendable>
+
+        <comps>
+            <li Class="PromotionLib.ComplicationCompProperties">
+                <type>GenericComplication</type>
+                <scope>Brain</scope>
+                <severityLevel>1</severityLevel>
+            </li>
+            <li Class="HediffCompProperties_TendDuration">
+                <baseTendDurationHours>12</baseTendDurationHours>                <!-- 每次治疗有效12小时 -->
+                <severityPerDayTended>-0.5</severityPerDayTended>                <!-- 降低速度加快：2天痊愈 -->
+                <disappearsAtTotalTendQuality>1</disappearsAtTotalTendQuality>                <!-- 治一次就差不多痊愈 -->
+                <showTendQuality>true</showTendQuality>               <!-- 隐藏治疗质量（可选） -->
+            </li>
+        </comps>
+    </HediffDef>
+
+
+</Defs>
